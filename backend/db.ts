@@ -8,7 +8,7 @@ export const pool = new Pool({
   password: process.env.POSTGRES_PASSWORD || 'password',
   host: process.env.POSTGRES_HOST || 'localhost',
   port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-  database: process.env.POSTGRES_DB || 'flashads',
+  database: process.env.POSTGRES_DB || 'townticker',
 });
 
 // Helper function to easily run queries

@@ -35,7 +35,7 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
           SET status = 'active', 
               stripe_payment_intent_id = $1,
               start_time = NOW(),
-              end_time = NOW() + INTERVAL '1 hour' * $2
+              end_time = NOW() + INTERVAL '1 hour' * ($2::integer)
           WHERE id = $3
         `, [paymentIntentId, durationHours, adId]);
       }

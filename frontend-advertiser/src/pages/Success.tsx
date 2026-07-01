@@ -7,7 +7,7 @@ export default function Success() {
   return (
     <div className="status-page panel success-panel">
       <h2>Payment Successful!</h2>
-      <p>Your FlashAd has been submitted and is now active.</p>
+      <p>Your TownTickerAd has been submitted and is now active.</p>
       {sessionId && <p className="session-id">Order ID: {sessionId}</p>}
       <Link to="/" className="btn">Create Another Ad</Link>
     </div>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db';
 import { stripe } from '../stripe';
+import { calculatePlatformFee } from '../utils';
 import multer from 'multer';
 import path from 'path';
 
@@ -25,8 +26,11 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing publisher ID' });
     }
 
+    const pubResult = await query('SELECT config FROM publishers WHERE id = $1', [publisherId]);
+    const widgetConfig = pubResult.rows[0]?.config?.widgetConfig || {};
+
     const { rows } = await query(`
-      SELECT id, headline, body_text, link_url, image_url 
+      SELECT id, data, tier 
       FROM ads 
       WHERE publisher_id = $1 
         AND status = 'active'
@@ -36,7 +40,7 @@ router.get('/', async (req, res) => {
       LIMIT 3;
     `, [publisherId]);
 
-    res.json({ ads: rows });
+    res.json({ ads: rows, config: widgetConfig });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -44,31 +48,13 @@ router.get('/', async (req, res) => {
 });
 
 // Advertiser checkout
-router.post('/checkout', upload.single('image'), async (req, res) => {
+// We accept any file uploads, and we will map them into the dynamic data payload
+router.post('/checkout', upload.any(), async (req, res) => {
   try {
-    const { publisher_id, headline, body_text, link_url, tier } = req.body;
+    const { publisher_id, tier, ...dynamicData } = req.body;
     
-    // Tier logic
-    let duration_hours = 24;
-    let price_cents = 2500;
-    
-    if (tier === '3-day') {
-      duration_hours = 72;
-      price_cents = 6000;
-    } else if (tier === '7-day') {
-      duration_hours = 168;
-      price_cents = 12000;
-    } else if (tier !== '1-day') {
-      return res.status(400).json({ error: 'Invalid tier' });
-    }
-
-    const image_url = req.file ? `/uploads/${req.file.filename}` : '';
-
-    // Calculate platform fee (20%)
-    const platform_fee_cents = Math.round(price_cents * 0.20);
-
-    // Fetch publisher's stripe account id
-    const pubResult = await query('SELECT stripe_account_id FROM publishers WHERE id = $1', [publisher_id]);
+    // Fetch publisher config
+    const pubResult = await query('SELECT stripe_account_id, config FROM publishers WHERE id = $1', [publisher_id]);
     if (pubResult.rowCount === 0) {
       return res.status(404).json({ error: 'Publisher not found' });
     }
@@ -78,14 +64,55 @@ router.post('/checkout', upload.single('image'), async (req, res) => {
         return res.status(400).json({ error: 'Publisher has not onboarded with Stripe' });
     }
 
-    // Insert pending ad
+    const config = publisher.config || {};
+    const tiers = config.tiers || [];
+    const adSchema = config.adSchema || [];
+
+    const selectedTier = tiers.find((t: any) => t.id === tier);
+    if (!selectedTier) {
+      return res.status(400).json({ error: 'Invalid tier selected' });
+    }
+
+    const price_cents = selectedTier.price_cents;
+    const duration_hours = selectedTier.duration_hours;
+    const platform_fee_cents = calculatePlatformFee(price_cents);
+
+    // Populate file uploads into dynamicData
+    if (req.files && Array.isArray(req.files)) {
+      req.files.forEach((file) => {
+        dynamicData[file.fieldname] = `/uploads/${file.filename}`;
+      });
+    }
+
+    // Basic validation against adSchema
+    for (const field of adSchema) {
+      if (field.required && !dynamicData[field.name]) {
+         return res.status(400).json({ error: `Missing required field: ${field.label}` });
+      }
+    }
+
+    if (price_cents === 0) {
+      // Free ad: bypass Stripe and instantly activate
+      await query(`
+        INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time)
+        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), NOW() + interval '1 hour' * ($4::integer))
+      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents]);
+      
+      return res.json({ url: `http://localhost:5173/success` });
+    }
+
+    // Insert pending ad for paid tiers
     const adResult = await query(`
-      INSERT INTO ads (publisher_id, headline, body_text, link_url, image_url, tier, duration_hours, price_cents)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id;
-    `, [publisher_id, headline, body_text, link_url, image_url, tier, duration_hours, price_cents]);
+    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents]);
     
     const adId = adResult.rows[0].id;
+
+    // We'll use the first text field in the schema for the product name, or fallback to 'TownTicker Ad'
+    const titleField = adSchema.find((f: any) => f.type === 'text' || f.type === 'short-text' || f.type === 'long-text');
+    const productName = titleField && dynamicData[titleField.name] ? dynamicData[titleField.name] : 'TownTicker Ad';
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -94,7 +121,7 @@ router.post('/checkout', upload.single('image'), async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: `Flash Ad (${tier}) - ${headline}`,
+            name: `TownTicker Ad (${selectedTier.name}) - ${productName}`,
           },
           unit_amount: price_cents,
         },
