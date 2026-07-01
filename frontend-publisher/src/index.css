@@ -400,7 +400,7 @@ textarea:focus, input:focus {
 
 .home-nav {
   position: relative;
-  z-index: 10;
+  z-index: 1000;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -429,6 +429,32 @@ textarea:focus, input:focus {
   display: flex;
   gap: 1.5rem;
   align-items: center;
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.hamburger span {
+  width: 25px;
+  height: 3px;
+  background-color: #0f172a;
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+
+.hamburger.open span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
 }
 
 .nav-btn-link {
@@ -545,10 +571,10 @@ textarea:focus, input:focus {
 .hero-visual {
   flex: 1;
   position: relative;
-  height: 500px;
+  height: 600px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .glass-panel {
@@ -575,6 +601,10 @@ textarea:focus, input:focus {
 }
 
 
+
+.problem-section {
+  padding: 6rem 2rem;
+}
 
 .social-proof-badges {
   margin-top: 3rem;
@@ -608,6 +638,43 @@ textarea:focus, input:focus {
 }
 
 
+
+/* Context Labels */
+.floating-label {
+  position: absolute;
+  background: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 99px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 20;
+  color: #0f172a;
+}
+
+.label-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.bg-blue-500 { background-color: #3b82f6; }
+.bg-purple-500 { background-color: #8b5cf6; }
+
+.top-label {
+  top: 15%;
+  right: -5%;
+  animation: float-panel 6s ease-in-out infinite;
+}
+
+.bottom-label {
+  bottom: 25%;
+  left: -5%;
+  animation: float-panel 6s ease-in-out infinite reverse;
+}
 
 .mobile-mockup {
   width: 320px;
@@ -737,6 +804,13 @@ textarea:focus, input:focus {
   font-weight: 600;
 }
 
+.widget-ad-box {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f8fafc;
+}
+
 .widget-img {
   width: 100%;
   height: 80px;
@@ -772,6 +846,7 @@ textarea:focus, input:focus {
 
 .features {
   margin-top: 8rem;
+  margin-bottom: 8rem;
   text-align: center;
 }
 
@@ -835,17 +910,56 @@ textarea:focus, input:focus {
   }
   
   .hero-visual {
-    height: 350px;
+    height: 520px;
     width: 100%;
     transform: scale(0.85);
+    transform-origin: top center;
+  }
+  
+  .top-label {
+    right: 5%;
+    top: 10%;
+  }
+
+  .bottom-label {
+    left: 5%;
+    bottom: 25%;
   }
   
   .home-nav {
     padding: 1rem 1.5rem;
   }
 
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    right: 1.5rem;
+    background: white;
+    flex-direction: column;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+    gap: 1rem;
+    display: none;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
   .nav-logo {
     font-size: 1.5rem;
+  }
+  
+  .problem-section {
+    padding: 3rem 1rem;
   }
 }
 
@@ -856,7 +970,20 @@ textarea:focus, input:focus {
   
   .hero-visual {
     transform: scale(0.7);
-    height: 300px;
+    transform-origin: top center;
+    height: 420px;
+  }
+
+  .top-label {
+    right: -10%;
+    top: 5%;
+    transform: scale(0.85);
+  }
+
+  .bottom-label {
+    left: -10%;
+    bottom: 10%;
+    transform: scale(0.85);
   }
   
   .home-main {
@@ -864,6 +991,6 @@ textarea:focus, input:focus {
   }
   
   .problem-section {
-    padding: 4rem 1rem;
+    padding: 1rem 1rem 3rem;
   }
 }

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS ads (
     status VARCHAR(50) NOT NULL DEFAULT 'pending_payment',
     stripe_payment_intent_id VARCHAR(255),
     stripe_checkout_session_id VARCHAR(255),
+    advertiser_email VARCHAR(255),
     start_time TIMESTAMP WITH TIME ZONE,
     end_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import '../index.css';
 
 export default function Home() {
@@ -12,26 +13,7 @@ export default function Home() {
       <div className="bg-blob blob-2"></div>
       <div className="bg-blob blob-3"></div>
 
-      <nav className="home-nav">
-        <div className="nav-logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '0.5rem'}}>
-            <defs>
-              <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#3b82f6" />
-              </linearGradient>
-            </defs>
-            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>
-          </svg>
-          <span className="nav-logo-text">TownTicker</span>
-        </div>
-        <div className="nav-links">
-          <button className="nav-btn-link" onClick={() => navigate('/about')}>About</button>
-          <button className="nav-btn-link" onClick={() => navigate('/research')}>Research</button>
-          <button className="nav-btn-login" onClick={() => navigate('/login')}>Login</button>
-          <button className="nav-btn-signup" onClick={() => navigate('/signup')}>Get Started</button>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="home-main">
         {/* HERO SECTION */}
@@ -63,6 +45,15 @@ export default function Home() {
           </div>
 
           <div className="hero-visual">
+            <div className="floating-label top-label">
+              <span className="label-dot bg-blue-500"></span>
+              Your Local News Site
+            </div>
+            <div className="floating-label bottom-label">
+              <span className="label-dot bg-purple-500"></span>
+              Self-Serve Ad Widget
+            </div>
+            
             <div className="mobile-mockup">
               <div className="mobile-header">
                 <div className="mobile-notch"></div>
@@ -80,13 +71,15 @@ export default function Home() {
                   {/* TownTicker Widget Injected */}
                   <div className="mockup-widget">
                     <div className="widget-header">
-                      <span className="widget-badge">Ad</span>
-                      <span className="widget-brand">By TownTicker</span>
+                      <span className="widget-badge">TownTicker</span>
+                      <span className="widget-brand" style={{background: '#eef2ff', padding: '2px 6px', borderRadius: '4px'}}>Post Ad $50</span>
                     </div>
-                    <div className="widget-img"></div>
-                    <div className="widget-text"></div>
-                    <div className="widget-text short"></div>
-                    <div className="widget-btn"></div>
+                    <div className="widget-ad-box">
+                      <div className="widget-img"></div>
+                      <div className="widget-text"></div>
+                      <div className="widget-text short"></div>
+                      <div className="widget-btn"></div>
+                    </div>
                   </div>
 
                   <div className="news-text-line"></div>
@@ -98,7 +91,7 @@ export default function Home() {
         </section>
 
         {/* THE PROBLEM SECTION */}
-        <section className="problem-section" style={{ padding: '6rem 2rem', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+        <section className="problem-section" style={{ textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '3rem', color: '#0f172a' }}>The local news blind spot.</h2>
           
           <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
@@ -154,6 +147,31 @@ export default function Home() {
               </div>
               <h3>Fully Customizable</h3>
               <p>Define exactly what fields advertisers must fill out (images, text, links), and set your own duration tiers and accessible pricing (e.g., $50 for 3 days).</p>
+            </div>
+          </div>
+        </section>
+
+        {/* GUARDRAILS SECTION */}
+        <section style={{ padding: '5rem 2rem', backgroundColor: '#f1f5f9' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '2.25rem', color: '#0f172a', marginBottom: '1rem', marginTop: 0 }}>Built to Protect Premium Advertisers</h2>
+            <p style={{ color: '#475569', fontSize: '1.125rem', lineHeight: '1.6', marginBottom: '3.5rem', maxWidth: '800px', margin: '0 auto 3.5rem auto' }}>
+              We know your sales team relies on premium banner advertisers. TownTicker is strictly designed with guardrails so large brands won't cannibalize your core revenue with self-serve ads.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem', textAlign: 'left' }}>
+              <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px' }}>
+                <h3 style={{ color: '#1d4ed8', marginTop: 0, fontSize: '1.25rem', marginBottom: '1rem' }}>The Sandbox Constraint</h3>
+                <p style={{ color: '#475569', lineHeight: '1.6', marginBottom: 0, fontSize: '1rem' }}>No custom artwork or brand fonts. Ads are strictly formatted as native community updates. Perfect for local shops, but useless to massive ad agencies.</p>
+              </div>
+              <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px' }}>
+                <h3 style={{ color: '#1d4ed8', marginTop: 0, fontSize: '1.25rem', marginBottom: '1rem' }}>Inventory Caps</h3>
+                <p style={{ color: '#475569', lineHeight: '1.6', marginBottom: 0, fontSize: '1rem' }}>We hard-cap maximum durations and prevent any single business from dominating the widget. Agencies hate manual work—they can't "set it and forget it."</p>
+              </div>
+              <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px' }}>
+                <h3 style={{ color: '#10b981', marginTop: 0, fontSize: '1.25rem', marginBottom: '1rem' }}>Automated Upsells</h3>
+                <p style={{ color: '#475569', lineHeight: '1.6', marginBottom: 0, fontSize: '1rem' }}>Instead of fearing big budgets, we help you catch them. If a small business spends heavily, we automatically alert your sales team to pitch a premium package.</p>
+              </div>
             </div>
           </div>
         </section>

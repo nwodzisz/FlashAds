@@ -26,9 +26,9 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
 
     if (adId) {
       // Fetch duration to calculate end time
-      const adResult = await query('SELECT duration_hours FROM ads WHERE id = $1', [adId]);
+      const adResult = await query('SELECT duration_hours, advertiser_email, publisher_id FROM ads WHERE id = $1', [adId]);
       if (adResult.rowCount && adResult.rowCount > 0) {
-        const durationHours = adResult.rows[0].duration_hours;
+        const { duration_hours, advertiser_email, publisher_id } = adResult.rows[0];
         
         await query(`
           UPDATE ads 
@@ -37,7 +37,29 @@ router.post('/stripe', express.raw({type: 'application/json'}), async (req, res)
               start_time = NOW(),
               end_time = NOW() + INTERVAL '1 hour' * ($2::integer)
           WHERE id = $3
-        `, [paymentIntentId, durationHours, adId]);
+        `, [paymentIntentId, duration_hours, adId]);
+
+        // WHALE DETECTION
+        if (advertiser_email) {
+          const spendResult = await query(`
+            SELECT SUM(price_cents) as total_spend
+            FROM ads
+            WHERE advertiser_email = $1
+              AND publisher_id = $2
+              AND status = 'active'
+              AND start_time >= NOW() - INTERVAL '30 days'
+          `, [advertiser_email, publisher_id]);
+
+          const totalSpend = parseInt(spendResult.rows[0].total_spend || '0', 10);
+          if (totalSpend >= 50000) { // $500 in cents
+             console.log(`\n======================================================`);
+             console.log(`🐳 WHALE ALERT!`);
+             console.log(`Advertiser ${advertiser_email} has spent over $500 in the last 30 days!`);
+             console.log(`Sending automated email to publisher's Ad Sales Director...`);
+             console.log(`"Heads up: ${advertiser_email} has spent $${(totalSpend/100).toFixed(2)} on flash ads this month. They clearly have budget and see value in your audience. You should call them directly and pitch the $1,500 premium banner package."`);
+             console.log(`======================================================\n`);
+          }
+        }
       }
     }
   }

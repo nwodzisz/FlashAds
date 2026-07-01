@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 export default function About() {
   const navigate = useNavigate();
@@ -11,26 +12,7 @@ export default function About() {
       <div className="bg-blob blob-2"></div>
       <div className="bg-blob blob-3"></div>
 
-      <nav className="home-nav">
-        <div className="nav-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '0.5rem'}}>
-            <defs>
-              <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#3b82f6" />
-              </linearGradient>
-            </defs>
-            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>
-          </svg>
-          <span className="nav-logo-text">TownTicker</span>
-        </div>
-        <div className="nav-links">
-          <button className="nav-btn-link" onClick={() => navigate('/about')}>About</button>
-          <button className="nav-btn-link" onClick={() => navigate('/research')}>Research</button>
-          <button className="nav-btn-login" onClick={() => navigate('/login')}>Login</button>
-          <button className="nav-btn-signup" onClick={() => navigate('/signup')}>Get Started</button>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="home-main">
         <section className="hero-compact">
@@ -46,20 +28,60 @@ export default function About() {
           </div>
         </section>
 
-        <section style={{ padding: '4rem 2rem', position: 'relative', zIndex: 10 }}>
-          <div className="glass-panel" style={{ maxWidth: '900px', margin: '0 auto', padding: '4rem', borderRadius: '24px', textAlign: 'left' }}>
-            <h2 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: '2rem' }}>The Mission</h2>
-            <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', marginBottom: '1.5rem' }}>
-              Local publishers are leaving millions of dollars on the table because they make it too difficult for small businesses to buy advertising. 
-              While the New York Times and Facebook have built automated, self-serve ad platforms, the average local newspaper still relies on PDF media kits and phone calls.
-            </p>
-            <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', marginBottom: '1.5rem' }}>
-              We built TownTicker to bridge this gap. We provide a beautiful, drop-in widget that allows any local publisher—whether you run a local blog, a community newsletter, or a regional newspaper—to instantly offer self-serve advertising.
-            </p>
-            <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', marginBottom: '1.5rem' }}>
-              By removing the friction, publishers can capture the long-tail of local ad budgets, and small businesses can affordably reach their neighbors. 
-              It's a win-win that puts money back into local journalism.
-            </p>
+        <section style={{ padding: '2rem 2rem 6rem', position: 'relative', zIndex: 10 }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              {/* The Problem */}
+              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+                <div style={{ backgroundColor: '#fee2e2', padding: '1rem', borderRadius: '16px', color: '#dc2626', flexShrink: 0 }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', color: '#0f172a', marginTop: 0, marginBottom: '1rem' }}>The Problem</h2>
+                  <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', margin: 0 }}>
+                    Local publishers are leaving millions of dollars on the table because they make it too difficult for small businesses to buy advertising. 
+                    While massive platforms have built automated, self-serve ad engines, the average local newspaper still relies on PDF media kits and phone calls.
+                  </p>
+                </div>
+              </div>
+
+              {/* The Solution */}
+              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+                <div style={{ backgroundColor: '#dcfce7', padding: '1rem', borderRadius: '16px', color: '#16a34a', flexShrink: 0 }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', color: '#0f172a', marginTop: 0, marginBottom: '1rem' }}>The Solution</h2>
+                  <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', margin: 0 }}>
+                    We built TownTicker to bridge this gap. We provide a beautiful, drop-in widget that allows any local publisher—whether you run a local blog, a community newsletter, or a regional newspaper—to instantly offer self-serve advertising directly on your site.
+                  </p>
+                </div>
+              </div>
+
+              {/* The Impact */}
+              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+                <div style={{ backgroundColor: '#dbeafe', padding: '1rem', borderRadius: '16px', color: '#2563eb', flexShrink: 0 }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path></svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', color: '#0f172a', marginTop: 0, marginBottom: '1rem' }}>The Impact</h2>
+                  <p style={{ color: '#475569', fontSize: '1.15rem', lineHeight: '1.7', margin: 0 }}>
+                    By removing the friction, publishers can capture the long-tail of local ad budgets, and small businesses can affordably reach their neighbors. 
+                    It's a win-win that puts money back into local journalism and revitalizes local economies.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            <div style={{ marginTop: '4rem', textAlign: 'center' }}>
+              <button className="btn-primary-large" onClick={() => navigate('/signup')}>
+                Join the Movement
+              </button>
+            </div>
+
           </div>
         </section>
       </main>

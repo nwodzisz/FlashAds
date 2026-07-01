@@ -83,6 +83,7 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
       {/* Widget Config */}
       <div className="config-section">
         <h3>Embed Widget Style</h3>
+        
         <div className="form-group row">
           <div className="col">
             <label>Widget Layout</label>
@@ -93,6 +94,77 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
               <option value="vertical">Vertical List</option>
               <option value="horizontal">Horizontal Grid</option>
             </select>
+          </div>
+          <div className="col">
+            <label>Font Family</label>
+            <select 
+              value={widgetConfig.styles?.fontFamily || 'system-ui, sans-serif'} 
+              onChange={e => updateWidgetConfig('fontFamily', e.target.value)}
+            >
+              <option value="system-ui, sans-serif">System Default</option>
+              <option value="'Inter', sans-serif">Inter</option>
+              <option value="'Georgia', serif">Georgia (Serif)</option>
+              <option value="'Courier New', monospace">Courier (Mono)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group row">
+          <div className="col">
+            <label>Widget Padding</label>
+            <input 
+              type="text" 
+              placeholder="e.g. 1rem or 20px"
+              value={widgetConfig.styles?.padding || '0'} 
+              onChange={e => updateWidgetConfig('padding', e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <label>Ad Border Radius</label>
+            <input 
+              type="text" 
+              placeholder="e.g. 8px"
+              value={widgetConfig.styles?.borderRadius || '8px'} 
+              onChange={e => updateWidgetConfig('borderRadius', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="form-group row">
+          <div className="col">
+            <label>Widget Background</label>
+            <input 
+              type="color" 
+              value={widgetConfig.styles?.backgroundColor || '#ffffff'} 
+              onChange={e => updateWidgetConfig('backgroundColor', e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <label>Ad Background</label>
+            <input 
+              type="color" 
+              value={widgetConfig.styles?.adBackgroundColor || '#ffffff'} 
+              onChange={e => updateWidgetConfig('adBackgroundColor', e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="form-group row">
+          <div className="col">
+            <label>Ad Border Color</label>
+            <input 
+              type="color" 
+              value={widgetConfig.styles?.adBorderColor || '#e5e7eb'} 
+              onChange={e => updateWidgetConfig('adBorderColor', e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <label>Text Color</label>
+            <input 
+              type="color" 
+              value={widgetConfig.styles?.textColor || '#111827'} 
+              onChange={e => updateWidgetConfig('textColor', e.target.value)}
+            />
           </div>
         </div>
       </div>

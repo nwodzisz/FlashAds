@@ -51,8 +51,12 @@ router.get('/', async (req, res) => {
 // We accept any file uploads, and we will map them into the dynamic data payload
 router.post('/checkout', upload.any(), async (req, res) => {
   try {
-    const { publisher_id, tier, ...dynamicData } = req.body;
+    const { publisher_id, tier, advertiser_email, ...dynamicData } = req.body;
     
+    if (!advertiser_email) {
+      return res.status(400).json({ error: 'Advertiser email is required' });
+    }
+
     // Fetch publisher config
     const pubResult = await query('SELECT stripe_account_id, config FROM publishers WHERE id = $1', [publisher_id]);
     if (pubResult.rowCount === 0) {
@@ -77,6 +81,27 @@ router.post('/checkout', upload.any(), async (req, res) => {
     const duration_hours = selectedTier.duration_hours;
     const platform_fee_cents = calculatePlatformFee(price_cents);
 
+    // Enforce 7-day duration cap
+    if (duration_hours > 7 * 24) {
+      return res.status(400).json({ error: 'Maximum ad duration is 7 days.' });
+    }
+
+    // Enforce Share of Voice Limits
+    const activeAdsResult = await query(`
+      SELECT id, advertiser_email FROM ads
+      WHERE publisher_id = $1
+        AND status = 'active'
+        AND end_time >= NOW()
+    `, [publisher_id]);
+    
+    const totalActive = activeAdsResult.rowCount || 0;
+    if (totalActive >= 10) {
+      const ownedByAdvertiser = activeAdsResult.rows.filter(a => a.advertiser_email === advertiser_email).length;
+      if (ownedByAdvertiser >= 2) {
+        return res.status(400).json({ error: 'Inventory limit reached. To ensure fair rotation, a single advertiser cannot dominate the widget.' });
+      }
+    }
+
     // Populate file uploads into dynamicData
     if (req.files && Array.isArray(req.files)) {
       req.files.forEach((file) => {
@@ -94,19 +119,19 @@ router.post('/checkout', upload.any(), async (req, res) => {
     if (price_cents === 0) {
       // Free ad: bypass Stripe and instantly activate
       await query(`
-        INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time)
-        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), NOW() + interval '1 hour' * ($4::integer))
-      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents]);
+        INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time, advertiser_email)
+        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), NOW() + interval '1 hour' * ($4::integer), $6)
+      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email]);
       
       return res.json({ url: `http://localhost:5173/success` });
     }
 
     // Insert pending ad for paid tiers
     const adResult = await query(`
-      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, advertiser_email)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id;
-    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents]);
+    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email]);
     
     const adId = adResult.rows[0].id;
 
@@ -117,6 +142,7 @@ router.post('/checkout', upload.any(), async (req, res) => {
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
+      customer_email: advertiser_email,
       line_items: [{
         price_data: {
           currency: 'usd',

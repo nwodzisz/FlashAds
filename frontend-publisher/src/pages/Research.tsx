@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
+import Navbar from '../components/Navbar';
 
 export default function Research() {
   const navigate = useNavigate();
@@ -31,26 +32,7 @@ export default function Research() {
       <div className="bg-blob blob-2"></div>
       <div className="bg-blob blob-3"></div>
 
-      <nav className="home-nav">
-        <div className="nav-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#logo-grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '0.5rem'}}>
-            <defs>
-              <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#3b82f6" />
-              </linearGradient>
-            </defs>
-            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>
-          </svg>
-          <span className="nav-logo-text">TownTicker</span>
-        </div>
-        <div className="nav-links">
-          <button className="nav-btn-link" onClick={() => navigate('/about')}>About</button>
-          <button className="nav-btn-link" onClick={() => navigate('/research')}>Research</button>
-          <button className="nav-btn-login" onClick={() => navigate('/login')}>Login</button>
-          <button className="nav-btn-signup" onClick={() => navigate('/signup')}>Get Started</button>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="home-main">
         <section className="hero-compact">

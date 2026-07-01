@@ -12,7 +12,7 @@ const canAccessPublisher = (req: any, publisherId: string) => {
 };
 
 // Get publisher config (public, used by widget and advertiser portal)
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: any, res: any) => {
   try {
     const publisherId = req.params.id;
     const { rows } = await query(`SELECT id, name, domain, config, stripe_account_id FROM publishers WHERE id = $1`, [publisherId]);
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Admin: List publishers
-router.get('/', requireAuth, requireAdmin, async (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     const { rows } = await query(`SELECT id, name, domain, created_at FROM publishers ORDER BY created_at DESC`);
     res.json(rows);
@@ -41,12 +41,12 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Admin: Create publisher (stubbed for brevity, could just use register flow)
-router.post('/', requireAuth, requireAdmin, async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req: any, res: any) => {
   res.status(501).json({ error: 'Not implemented' });
 });
 
 // Admin: Delete publisher
-router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     await query(`DELETE FROM publishers WHERE id = $1`, [req.params.id]);
     res.json({ success: true });
@@ -56,7 +56,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Publisher: Get account settings
-router.get('/:id/settings', requireAuth, async (req, res) => {
+router.get('/:id/settings', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     
@@ -76,7 +76,7 @@ router.get('/:id/settings', requireAuth, async (req, res) => {
 });
 
 // Publisher: Update account settings
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     
@@ -119,7 +119,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // Publisher: List team members
-router.get('/:id/users', requireAuth, async (req, res) => {
+router.get('/:id/users', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     
@@ -131,7 +131,7 @@ router.get('/:id/users', requireAuth, async (req, res) => {
 });
 
 // Publisher: Add team member
-router.post('/:id/users', requireAuth, async (req, res) => {
+router.post('/:id/users', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     
@@ -153,7 +153,7 @@ router.post('/:id/users', requireAuth, async (req, res) => {
 });
 
 // Publisher: Remove team member
-router.delete('/:id/users/:userId', requireAuth, async (req, res) => {
+router.delete('/:id/users/:userId', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     // Prevent deleting oneself
@@ -168,7 +168,7 @@ router.delete('/:id/users/:userId', requireAuth, async (req, res) => {
 
 
 // Publisher: Update config
-router.put('/:id/config', requireAuth, async (req, res) => {
+router.put('/:id/config', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     const { config } = req.body;
@@ -180,7 +180,7 @@ router.put('/:id/config', requireAuth, async (req, res) => {
 });
 
 // Get publisher's ads for moderation (Publisher only)
-router.get('/:id/ads', requireAuth, async (req, res) => {
+router.get('/:id/ads', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
 
@@ -198,7 +198,7 @@ router.get('/:id/ads', requireAuth, async (req, res) => {
 });
 
 // Reject & Refund
-router.post('/:id/ads/:adId/reject', requireAuth, async (req, res) => {
+router.post('/:id/ads/:adId/reject', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
 
@@ -228,7 +228,7 @@ router.post('/:id/ads/:adId/reject', requireAuth, async (req, res) => {
 });
 
 // Stripe Connect Onboarding
-router.post('/:id/onboard', requireAuth, async (req, res) => {
+router.post('/:id/onboard', requireAuth, async (req: any, res: any) => {
   try {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
 

@@ -9,6 +9,7 @@ function App() {
   
   const [formData, setFormData] = useState<any>({});
   const [tier, setTier] = useState('');
+  const [advertiserEmail, setAdvertiserEmail] = useState('');
 
   useEffect(() => {
     if (window.location.pathname === '/success') {
@@ -56,6 +57,7 @@ function App() {
       const submitData = new FormData();
       submitData.append('publisher_id', publisher.id);
       submitData.append('tier', tier);
+      submitData.append('advertiser_email', advertiserEmail);
 
       // Append dynamic data
       for (const key in formData) {
@@ -142,6 +144,18 @@ function App() {
 
           <div className="form-section mt-8">
             <h2>Ad Content</h2>
+            
+            <div className="form-group">
+              <label>Your Email Address *</label>
+              <input 
+                type="email" 
+                required 
+                value={advertiserEmail} 
+                onChange={(e) => setAdvertiserEmail(e.target.value)} 
+                placeholder="Where should we send the receipt?"
+              />
+            </div>
+
             {schema.map((field: any) => (
               <div key={field.name} className="form-group">
                 <label>{field.label} {field.required && '*'}</label>

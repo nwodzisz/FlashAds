@@ -78,6 +78,14 @@ export default function Dashboard() {
     }
   };
 
+  const activeAdsCount = ads.filter(a => a.status === 'active').length;
+  const totalAdsSold = ads.filter(a => a.status !== 'rejected').length;
+  const totalRevenueCents = ads.reduce((sum, ad) => {
+    if (ad.status !== 'rejected') return sum + ad.price_cents;
+    return sum;
+  }, 0);
+  const totalRevenue = (totalRevenueCents / 100).toFixed(2);
+
   return (
     <div className="dashboard-layout">
       <div className="panel actions-panel">
@@ -90,6 +98,24 @@ export default function Dashboard() {
         <button onClick={handleOnboard} className="btn primary-btn">
           {hasStripe ? 'Edit Payouts' : 'Onboard Now'}
         </button>
+      </div>
+
+      <div className="panel analytics-panel">
+        <h2>General Analytics</h2>
+        <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
+          <div className="stat-card">
+            <h3>Total Sales</h3>
+            <p className="stat-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>${totalRevenue}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Active Ads</h3>
+            <p className="stat-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6' }}>{activeAdsCount}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Ads Sold</h3>
+            <p className="stat-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>{totalAdsSold}</p>
+          </div>
+        </div>
       </div>
 
       <div className="panel embed-panel">
