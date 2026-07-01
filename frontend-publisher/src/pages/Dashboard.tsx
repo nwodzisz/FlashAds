@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import LoadingScreen from '../components/LoadingScreen';
 import ConfigBuilder from '../components/ConfigBuilder';
+import WidgetPreview from '../components/WidgetPreview';
 
 export default function Dashboard() {
   const publisherId = localStorage.getItem('publisher_id');
@@ -149,11 +150,22 @@ export default function Dashboard() {
         <h2>Modular Configuration</h2>
         <p>Customize your ad portal and widget dynamically.</p>
         
-        <ConfigBuilder config={config} onChange={handleConfigChange} />
-
-        <button onClick={saveConfig} className="btn primary-btn" disabled={saving}>
-          {saving ? 'Saving...' : 'Save Configuration'}
-        </button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem', alignItems: 'start' }}>
+          <div>
+            <ConfigBuilder config={config} onChange={handleConfigChange} />
+            <button onClick={saveConfig} className="btn primary-btn" disabled={saving} style={{ marginTop: '2rem' }}>
+              {saving ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
+          <div style={{ position: 'sticky', top: '2rem' }}>
+            <WidgetPreview 
+              config={config} 
+              dummyAds={ads.filter(a => a.status === 'active').length > 0 
+                ? ads.filter(a => a.status === 'active').slice(0, 3) 
+                : [{ data: { headline: 'Support Local', body_text: 'Buy a digital ad today! This is a preview of what your active ads will look like.', link_url: '#' } }]} 
+            />
+          </div>
+        </div>
       </div>
 
       <div className="panel ads-panel">
