@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import '../index.css';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="home-container">
+    <div className="home-container" style={{ '--scroll-y': scrollY } as React.CSSProperties}>
       {/* Dynamic Background */}
       <div className="bg-blob blob-1"></div>
       <div className="bg-blob blob-2"></div>
@@ -20,18 +29,18 @@ export default function Home() {
         <section className="hero">
           <div className="hero-content">
             <h1 className="hero-title">
-              Unlock the 99% of local ad budgets <br />
+              Capture revenue from the 99% of local businesses <br />
               <span className="gradient-text">you are currently missing.</span>
             </h1>
             <p className="hero-subtitle">
-              TownTicker is a drop-in widget that lets local businesses buy affordable, self-serve ads directly on your site. Monetize the businesses who can't afford your $1,500 packages.
+              TownTicker is a drop-in widget that lets local businesses buy affordable, self-serve ads directly on your site. Monetize the businesses who can't afford your current packages.
             </p>
             <div className="hero-actions">
               <button className="btn-primary-large" onClick={() => navigate('/signup')}>
                 Start Monetizing Now
               </button>
             </div>
-            
+
             <div className="social-proof-badges">
               <span className="badge-pill">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
@@ -45,15 +54,6 @@ export default function Home() {
           </div>
 
           <div className="hero-visual">
-            <div className="floating-label top-label">
-              <span className="label-dot bg-blue-500"></span>
-              Your Local News Site
-            </div>
-            <div className="floating-label bottom-label">
-              <span className="label-dot bg-purple-500"></span>
-              Self-Serve Ad Widget
-            </div>
-            
             <div className="mobile-mockup">
               <div className="mobile-header">
                 <div className="mobile-notch"></div>
@@ -67,12 +67,12 @@ export default function Home() {
                   <div className="news-title"></div>
                   <div className="news-text-line"></div>
                   <div className="news-text-line short"></div>
-                  
+
                   {/* TownTicker Widget Injected */}
                   <div className="mockup-widget">
                     <div className="widget-header">
                       <span className="widget-badge">TownTicker</span>
-                      <span className="widget-brand" style={{background: '#eef2ff', padding: '2px 6px', borderRadius: '4px'}}>Post Ad $50</span>
+                      <span className="widget-brand" style={{ background: '#eef2ff', padding: '2px 6px', borderRadius: '4px' }}>Post Ad $50</span>
                     </div>
                     <div className="widget-ad-box">
                       <div className="widget-img"></div>
@@ -87,39 +87,48 @@ export default function Home() {
                 </div>
               </div>
             </div>
+            
+            <div className="floating-label top-label">
+              <span className="label-dot bg-blue-500"></span>
+              Your Local News Site
+            </div>
+            <div className="floating-label bottom-label">
+              <span className="label-dot bg-purple-500"></span>
+              Self-Serve Ad Widget
+            </div>
           </div>
         </section>
 
         {/* THE PROBLEM SECTION */}
         <section className="problem-section" style={{ textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '3rem', color: '#0f172a' }}>The local news blind spot.</h2>
-          
-          <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-            
-            <div className="comparison-card bad-way" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '2.5rem', borderRadius: '16px', textAlign: 'left' }}>
-              <div style={{ color: '#ef4444', marginBottom: '1.5rem' }}>
+
+          <div className="comparison-grid">
+
+            <div className="comparison-card bad-way comparison-card-inner" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+              <div className="comparison-icon" style={{ color: '#ef4444' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
               </div>
-              <h3 style={{ color: '#b91c1c', fontSize: '1.5rem', marginTop: 0 }}>The Absurd Friction</h3>
-              <p style={{ color: '#475569', fontSize: '1.1rem', lineHeight: '1.6' }}>
+              <h3 style={{ color: '#b91c1c' }}>The Absurd Friction</h3>
+              <p>
                 If a local coffee shop wants to quickly post an ad in the local paper, they have to find the "Contact Us" page, email a generic <code>sales@</code> address, wait 48 hours for a media kit, and then get pitched a massive "print-and-digital bundle" they don't have the budget for. They give up and leave.
               </p>
             </div>
 
-            <div className="comparison-card good-way" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '2.5rem', borderRadius: '16px', textAlign: 'left' }}>
-              <div style={{ color: '#3b82f6', marginBottom: '1.5rem' }}>
+            <div className="comparison-card good-way comparison-card-inner" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+              <div className="comparison-icon" style={{ color: '#3b82f6' }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><path d="M9 10l2 2 4-4"></path></svg>
               </div>
-              <h3 style={{ color: '#1d4ed8', fontSize: '1.5rem', marginTop: 0 }}>The TownTicker Way</h3>
-              <p style={{ color: '#475569', fontSize: '1.1rem', lineHeight: '1.6' }}>
+              <h3 style={{ color: '#1d4ed8' }}>The TownTicker Way</h3>
+              <p>
                 If that same coffee shop opens your website, they can tap three buttons in the TownTicker widget, pay an affordable rate, and have an ad running to people in their zip code in 5 minutes. No PDFs. No phone calls. Just instant, automated sales.
               </p>
             </div>
-            
+
           </div>
-          
+
           <h3 style={{ marginTop: '4rem', fontSize: '2rem', color: '#0f172a', fontWeight: 600, maxWidth: '900px', margin: '4rem auto 0' }}>
-            83% of local businesses spend their ad budgets on Facebook because it is self-serve. <br/>
+            83% of local businesses spend their ad budgets on Facebook because it is self-serve. <br />
             <span className="gradient-text">Bring them back.</span>
           </h3>
         </section>
@@ -158,7 +167,7 @@ export default function Home() {
             <p style={{ color: '#475569', fontSize: '1.125rem', lineHeight: '1.6', marginBottom: '3.5rem', maxWidth: '800px', margin: '0 auto 3.5rem auto' }}>
               We know your sales team relies on premium banner advertisers. TownTicker is strictly designed with guardrails so large brands won't cannibalize your core revenue with self-serve ads.
             </p>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem', textAlign: 'left' }}>
               <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px' }}>
                 <h3 style={{ color: '#1d4ed8', marginTop: 0, fontSize: '1.25rem', marginBottom: '1rem' }}>The Sandbox Constraint</h3>
@@ -177,8 +186,8 @@ export default function Home() {
         </section>
 
         {/* CTA SECTION */}
-        <section style={{ padding: '6rem 2rem', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', padding: '4rem 2rem', borderRadius: '24px', position: 'relative' }}>
+        <section className="content-section" style={{ textAlign: 'center' }}>
+          <div className="glass-panel cta-card">
             <h2 style={{ fontSize: '2.5rem', color: '#0f172a', marginBottom: '1rem', marginTop: 0 }}>Ready to capture the self-serve ad market?</h2>
             <p style={{ color: '#475569', fontSize: '1.25rem', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem' }}>
               Turn your website into a 24/7 self-serve revenue stream with zero upfront costs.

@@ -27,7 +27,11 @@ router.get('/', async (req, res) => {
     }
 
     const pubResult = await query('SELECT config FROM publishers WHERE id = $1', [publisherId]);
-    const widgetConfig = pubResult.rows[0]?.config?.widgetConfig || {};
+    const fullConfig = pubResult.rows[0]?.config || {};
+    const widgetConfig = fullConfig.widgetConfig || {};
+    const adSchema = fullConfig.adSchema || [];
+
+    const maxAds = parseInt(widgetConfig.maxAds) || 3;
 
     const { rows } = await query(`
       SELECT id, data, tier 
@@ -37,10 +41,10 @@ router.get('/', async (req, res) => {
         AND start_time <= NOW() 
         AND end_time >= NOW()
       ORDER BY RANDOM() 
-      LIMIT 3;
-    `, [publisherId]);
+      LIMIT $2;
+    `, [publisherId, maxAds]);
 
-    res.json({ ads: rows, config: widgetConfig });
+    res.json({ ads: rows, config: widgetConfig, schema: adSchema });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -51,7 +55,7 @@ router.get('/', async (req, res) => {
 // We accept any file uploads, and we will map them into the dynamic data payload
 router.post('/checkout', upload.any(), async (req, res) => {
   try {
-    const { publisher_id, tier, advertiser_email, ...dynamicData } = req.body;
+    const { publisher_id, tier, advertiser_email, start_time, ...dynamicData } = req.body;
     
     if (!advertiser_email) {
       return res.status(400).json({ error: 'Advertiser email is required' });
@@ -120,24 +124,24 @@ router.post('/checkout', upload.any(), async (req, res) => {
       // Free ad: bypass Stripe and instantly activate
       await query(`
         INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time, advertiser_email)
-        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), NOW() + interval '1 hour' * ($4::integer), $6)
-      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email]);
-      
-      return res.json({ url: `http://localhost:5173/success` });
+        VALUES ($1, $2, $3, $4, $5, 'active', COALESCE($7::timestamp, NOW()), COALESCE($7::timestamp, NOW()) + interval '1 hour' * ($4::integer), $6)
+      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null]);
+      const origin = req.headers.origin || 'http://localhost:5173';
+      return res.json({ url: `${origin}/success` });
     }
 
     // Insert pending ad for paid tiers
     const adResult = await query(`
-      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, advertiser_email)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, advertiser_email, start_time)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id;
-    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email]);
+    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null]);
     
     const adId = adResult.rows[0].id;
 
-    // We'll use the first text field in the schema for the product name, or fallback to 'TownTicker Ad'
+    // We'll use the first text field in the schema for the product name, or fallback to 'Self-Serve Ad'
     const titleField = adSchema.find((f: any) => f.type === 'text' || f.type === 'short-text' || f.type === 'long-text');
-    const productName = titleField && dynamicData[titleField.name] ? dynamicData[titleField.name] : 'TownTicker Ad';
+    const productName = titleField && dynamicData[titleField.name] ? dynamicData[titleField.name] : 'Self-Serve Ad';
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -147,7 +151,7 @@ router.post('/checkout', upload.any(), async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: `TownTicker Ad (${selectedTier.name}) - ${productName}`,
+            name: `Self-Serve Ad (${selectedTier.name}) - ${productName}`,
           },
           unit_amount: price_cents,
         },
@@ -161,14 +165,38 @@ router.post('/checkout', upload.any(), async (req, res) => {
         },
       },
       client_reference_id: adId,
-      success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:5173/cancel`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cancel`,
     });
 
     // Update ad with session id
     await query('UPDATE ads SET stripe_checkout_session_id = $1 WHERE id = $2', [session.id, adId]);
 
     res.json({ url: session.url });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Analytics: Track an ad view
+router.post('/:id/view', async (req: any, res: any) => {
+  try {
+    const adId = req.params.id;
+    await query('UPDATE ads SET views = views + 1 WHERE id = $1', [adId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Analytics: Track an ad click
+router.post('/:id/click', async (req: any, res: any) => {
+  try {
+    const adId = req.params.id;
+    await query('UPDATE ads SET clicks = clicks + 1 WHERE id = $1', [adId]);
+    res.json({ success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });

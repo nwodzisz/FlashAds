@@ -19,6 +19,18 @@ export default function SubmissionForm() {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [widgetConfig, setWidgetConfig] = useState<any>({});
+
+  useEffect(() => {
+    // Fetch publisher config for preview
+    axios.get(`/api/ads?publisher=${defaultPublisherId}`)
+      .then(res => {
+        if (res.data.config) {
+          setWidgetConfig(res.data.config);
+        }
+      })
+      .catch(err => console.error('Failed to fetch publisher config', err));
+  }, [defaultPublisherId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -44,7 +56,7 @@ export default function SubmissionForm() {
     formData.append('image', image);
 
     try {
-      const res = await axios.post('http://localhost:3001/api/ads/checkout', formData, {
+      const res = await axios.post('/api/ads/checkout', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -131,16 +143,53 @@ export default function SubmissionForm() {
         <h2>Live Preview</h2>
         <p className="preview-help">This is how your ad will appear on the publisher's site.</p>
         
-        <div className="widget-preview-container">
-          <a href={linkUrl || '#'} className="flashad-widget-item" target="_blank" rel="noopener noreferrer">
-            <div className="flashad-image" style={{ backgroundImage: `url(${imagePreview || 'https://via.placeholder.com/300?text=Upload+Image'})` }}></div>
-            <div className="flashad-content">
-              <h3 className="flashad-headline">{headline || 'Your Headline Here'}</h3>
-              <p className="flashad-body">{bodyText || 'Your promotional body text will appear here. Make it catchy!'}</p>
-              <span className="flashad-sponsored">Sponsored</span>
+        {(() => {
+          const styles = widgetConfig.styles || {};
+          const containerStyle: React.CSSProperties = {
+            fontFamily: styles.fontFamily || 'system-ui, sans-serif',
+            display: 'flex',
+            flexWrap: 'wrap',
+            flexDirection: styles.layout === 'horizontal' ? 'row' : 'column',
+            gap: '1rem',
+            background: styles.backgroundColor || 'transparent',
+            padding: styles.padding || '0',
+            border: styles.border || 'none',
+            borderRadius: styles.borderRadius || '0',
+            overflow: 'hidden'
+          };
+        
+          const adStyle: React.CSSProperties = {
+            flex: 1,
+            minWidth: '250px',
+            maxWidth: styles.adMaxWidth || '400px',
+            boxSizing: 'border-box',
+            padding: '1rem',
+            background: styles.adBackgroundColor || '#ffffff',
+            border: `1px solid ${styles.adBorderColor || '#e5e7eb'}`,
+            borderRadius: styles.borderRadius || '8px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            textDecoration: 'none',
+            color: 'inherit',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            transition: 'transform 0.2s',
+            position: 'relative'
+          };
+          
+          return (
+            <div style={containerStyle}>
+              <a href={linkUrl || '#'} style={adStyle} target="_blank" rel="noopener noreferrer">
+                {widgetConfig.showAdPill !== false && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', zIndex: 10 }}>Ad</div>
+                )}
+                <img src={imagePreview || 'https://via.placeholder.com/300?text=Upload+Image'} alt="Ad" style={{ width: '100%', maxHeight: styles.imageMaxHeight || '250px', height: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
+                <div style={{ margin: 0, fontSize: '1.125rem', fontWeight: '600', color: styles.textColor || '#111827' }}>{headline || 'Your Headline Here'}</div>
+                <div style={{ margin: 0, fontSize: '0.875rem', fontWeight: '400', color: styles.textColor || '#4b5563' }}>{bodyText || 'Your promotional body text will appear here. Make it catchy!'}</div>
+              </a>
             </div>
-          </a>
-        </div>
+          );
+        })()}
       </div>
     </div>
   );

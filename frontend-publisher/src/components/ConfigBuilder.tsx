@@ -1,5 +1,12 @@
 import React from 'react';
 
+const GOOGLE_FONTS = [
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 
+  'Oswald', 'Source Sans Pro', 'Slabo 27px', 'Raleway', 'PT Sans',
+  'Merriweather', 'Nunito', 'Playfair Display', 'Rubik', 'Lora',
+  'Work Sans', 'Fira Sans', 'Quicksand', 'Karla', 'Inconsolata'
+];
+
 interface ConfigBuilderProps {
   config: any;
   onChange: (key: string, value: any) => void;
@@ -10,7 +17,13 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
   const formConfig = config.formConfig || { title: '', description: '' };
   const widgetConfig = config.widgetConfig || { styles: { layout: 'vertical' } };
   const tiers = config.tiers || [];
-  const adSchema = config.adSchema || [];
+  const defaultSchema = [
+    { name: 'headline', label: 'Headline', type: 'text', required: true, maxLength: 50, fontSize: '1.125rem' },
+    { name: 'body_text', label: 'Body Text', type: 'textarea', required: true, maxLength: 200, fontSize: '0.875rem' },
+    { name: 'link_url', label: 'Link URL', type: 'url', required: true },
+    { name: 'image', label: 'Ad Image', type: 'file', required: true }
+  ];
+  const adSchema = config.adSchema && config.adSchema.length > 0 ? config.adSchema : defaultSchema;
 
   const updateFormConfig = (field: string, value: string) => {
     onChange('formConfig', { ...formConfig, [field]: value });
@@ -23,24 +36,17 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
     });
   };
 
-  const addTier = () => {
-    onChange('tiers', [...tiers, { id: `tier-${Date.now()}`, name: 'New Tier', duration_hours: 24, price_cents: 1000 }]);
+  const updateWidgetRootConfig = (field: string, value: any) => {
+    onChange('widgetConfig', { 
+      ...widgetConfig, 
+      [field]: value 
+    });
   };
 
-  const updateTier = (index: number, field: string, value: any) => {
-    const newTiers = [...tiers];
-    newTiers[index] = { ...newTiers[index], [field]: value };
-    onChange('tiers', newTiers);
-  };
 
-  const removeTier = (index: number) => {
-    const newTiers = [...tiers];
-    newTiers.splice(index, 1);
-    onChange('tiers', newTiers);
-  };
 
   const addSchemaField = () => {
-    onChange('adSchema', [...adSchema, { name: `field_${Date.now()}`, label: 'New Field', type: 'text', required: false }]);
+    onChange('adSchema', [...adSchema, { name: `field_${Date.now()}`, label: 'New Field', type: 'text', required: false, fontSize: '1rem' }]);
   };
 
   const updateSchemaField = (index: number, field: string, value: any) => {
@@ -55,31 +61,26 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
     onChange('adSchema', newSchema);
   };
 
+  const moveSchemaFieldUp = (index: number) => {
+    if (index === 0) return;
+    const newSchema = [...adSchema];
+    const temp = newSchema[index - 1];
+    newSchema[index - 1] = newSchema[index];
+    newSchema[index] = temp;
+    onChange('adSchema', newSchema);
+  };
+
+  const moveSchemaFieldDown = (index: number) => {
+    if (index === adSchema.length - 1) return;
+    const newSchema = [...adSchema];
+    const temp = newSchema[index + 1];
+    newSchema[index + 1] = newSchema[index];
+    newSchema[index] = temp;
+    onChange('adSchema', newSchema);
+  };
+
   return (
     <div className="config-builder">
-      {/* Form Config */}
-      <div className="config-section">
-        <h3>Advertiser Form Basics</h3>
-        <div className="form-group row">
-          <div className="col">
-            <label>Form Title</label>
-            <input 
-              type="text" 
-              value={formConfig.title || ''} 
-              onChange={e => updateFormConfig('title', e.target.value)} 
-            />
-          </div>
-          <div className="col">
-            <label>Form Description</label>
-            <input 
-              type="text" 
-              value={formConfig.description || ''} 
-              onChange={e => updateFormConfig('description', e.target.value)} 
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Widget Config */}
       <div className="config-section">
         <h3>Embed Widget Style</h3>
@@ -98,13 +99,13 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
           <div className="col">
             <label>Font Family</label>
             <select 
-              value={widgetConfig.styles?.fontFamily || 'system-ui, sans-serif'} 
+              value={widgetConfig.styles?.fontFamily || 'Inter'} 
               onChange={e => updateWidgetConfig('fontFamily', e.target.value)}
             >
-              <option value="system-ui, sans-serif">System Default</option>
-              <option value="'Inter', sans-serif">Inter</option>
-              <option value="'Georgia', serif">Georgia (Serif)</option>
-              <option value="'Courier New', monospace">Courier (Mono)</option>
+              <option value="">System Default</option>
+              {GOOGLE_FONTS.map(font => (
+                <option key={font} value={font}>{font}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -148,7 +149,7 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
             />
           </div>
         </div>
-        
+
         <div className="form-group row">
           <div className="col">
             <label>Ad Border Color</label>
@@ -167,38 +168,52 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
             />
           </div>
         </div>
-      </div>
 
-      {/* Tiers */}
-      <div className="config-section">
-        <div className="flex-header">
-          <h3>Pricing Tiers</h3>
-          <button className="btn secondary-btn small-btn" onClick={addTier}>+ Add Tier</button>
-        </div>
-        {tiers.map((tier: any, i: number) => (
-          <div key={i} className="dynamic-list-item row">
-            <div className="form-group col">
-              <label>Internal ID</label>
-              <input type="text" value={tier.id || ''} onChange={e => updateTier(i, 'id', e.target.value)} />
-            </div>
-            <div className="form-group col">
-              <label>Display Name</label>
-              <input type="text" value={tier.name || ''} onChange={e => updateTier(i, 'name', e.target.value)} />
-            </div>
-            <div className="form-group col">
-              <label>Duration (Hours)</label>
-              <input type="number" value={tier.duration_hours || 0} onChange={e => updateTier(i, 'duration_hours', parseInt(e.target.value))} />
-            </div>
-            <div className="form-group col">
-              <label>Price (Cents)</label>
-              <input type="number" value={tier.price_cents || 0} onChange={e => updateTier(i, 'price_cents', parseInt(e.target.value))} />
-            </div>
-            <div className="col btn-col">
-              <label>&nbsp;</label>
-              <button className="btn danger-btn small-btn" onClick={() => removeTier(i)}>X</button>
-            </div>
+        <div className="form-group row">
+          <div className="col checkbox-col" style={{ display: 'flex', alignItems: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem', margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={widgetConfig.showAdPill !== false} 
+                onChange={e => updateWidgetRootConfig('showAdPill', e.target.checked)} 
+              />
+              Show [Ad] Indicator Pill
+            </label>
           </div>
-        ))}
+          <div className="col">
+            <label>Max Ads to Display</label>
+            <input 
+              type="number" 
+              min="1"
+              max="20"
+              value={widgetConfig.maxAds || 3} 
+              onChange={e => updateWidgetRootConfig('maxAds', parseInt(e.target.value) || 3)}
+            />
+          </div>
+        </div>
+        
+        <div className="form-group row">
+          <div className="col">
+            <label>Ad Max Width (px or %)</label>
+            <input 
+              type="text" 
+              value={widgetConfig.styles?.adMaxWidth || '400px'} 
+              onChange={e => updateWidgetConfig('adMaxWidth', e.target.value)}
+              placeholder="e.g. 400px or 100%"
+            />
+          </div>
+          <div className="col">
+            <label>Image Max Height (px or %)</label>
+            <input 
+              type="text" 
+              value={widgetConfig.styles?.imageMaxHeight || '250px'} 
+              onChange={e => updateWidgetConfig('imageMaxHeight', e.target.value)}
+              placeholder="e.g. 250px or 100%"
+            />
+          </div>
+        </div>
+        
+        
       </div>
 
       {/* Ad Schema */}
@@ -236,8 +251,13 @@ export default function ConfigBuilder({ config, onChange }: ConfigBuilderProps) 
               <label>Max Length</label>
               <input type="number" value={field.maxLength || ''} onChange={e => updateSchemaField(i, 'maxLength', parseInt(e.target.value))} placeholder="Optional" />
             </div>
-            <div className="col btn-col">
-              <label>&nbsp;</label>
+            <div className="form-group col">
+              <label>Font Size</label>
+              <input type="text" value={field.fontSize || '1rem'} onChange={e => updateSchemaField(i, 'fontSize', e.target.value)} placeholder="e.g. 1rem" />
+            </div>
+            <div className="col btn-col" style={{ display: 'flex', gap: '0.25rem', alignItems: 'flex-end', paddingBottom: '0.25rem' }}>
+              <button className="btn secondary-btn small-btn" onClick={() => moveSchemaFieldUp(i)} disabled={i === 0}>↑</button>
+              <button className="btn secondary-btn small-btn" onClick={() => moveSchemaFieldDown(i)} disabled={i === adSchema.length - 1}>↓</button>
               <button className="btn danger-btn small-btn" onClick={() => removeSchemaField(i)}>X</button>
             </div>
           </div>

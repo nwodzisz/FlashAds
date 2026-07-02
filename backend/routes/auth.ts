@@ -81,15 +81,16 @@ router.post('/register', async (req, res) => {
         { name: 'image', label: 'Ad Image', type: 'file', required: true }
       ],
       tiers: [
-        { id: '1-day', name: '1 Day TownTicker Ad', duration_hours: 24, price_cents: 2500 },
-        { id: '3-day', name: '3 Day TownTicker Ad', duration_hours: 72, price_cents: 5000 }
+        { id: '1-day', name: '1 Day Self-Serve Ad', duration_hours: 24, price_cents: 2500 },
+        { id: '3-day', name: '3 Day Self-Serve Ad', duration_hours: 72, price_cents: 5000 }
       ],
       formConfig: {
-        title: 'Buy a TownTicker Ad',
+        title: 'Buy a Self-Serve Ad',
         description: 'Your ad will go live instantly after payment.'
       },
       widgetConfig: {
-        styles: { layout: 'vertical' }
+        styles: { layout: 'vertical' },
+        showAdPill: true
       }
     };
 
@@ -125,10 +126,37 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/admin/invite', requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    const checkEmail = await query('SELECT id FROM users WHERE email = $1', [email]);
+    if (checkEmail.rowCount && checkEmail.rowCount > 0) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    
+    await query(`
+      INSERT INTO users (email, password_hash, role, publisher_id)
+      VALUES ($1, $2, 'admin', null)
+    `, [email, password_hash]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
 
 // Middleware for protected routes
-export const requireAuth = (req: any, res: any, next: any) => {
+export function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -142,11 +170,11 @@ export const requireAuth = (req: any, res: any, next: any) => {
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });
   }
-};
+}
 
-export const requireAdmin = (req: any, res: any, next: any) => {
+export function requireAdmin(req: any, res: any, next: any) {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin access required' });
   }
   next();
-};
+}

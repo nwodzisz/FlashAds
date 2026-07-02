@@ -3,6 +3,18 @@ import { query } from '../db';
 import { stripe } from '../stripe';
 import { requireAuth, requireAdmin } from './auth';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+
+// Set up storage for logo uploads
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
 
 const router = Router();
 
@@ -33,7 +45,16 @@ router.get('/:id', async (req: any, res: any) => {
 // Admin: List publishers
 router.get('/', requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
-    const { rows } = await query(`SELECT id, name, domain, created_at FROM publishers ORDER BY created_at DESC`);
+    const { rows } = await query(`
+      SELECT p.id, p.name, p.domain, p.created_at, 
+             COALESCE(SUM(a.views), 0) as total_views,
+             COALESCE(SUM(a.clicks), 0) as total_clicks,
+             COALESCE(SUM(a.price_cents), 0) as total_revenue_cents
+      FROM publishers p
+      LEFT JOIN ads a ON p.id = a.publisher_id
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -227,6 +248,54 @@ router.post('/:id/ads/:adId/reject', requireAuth, async (req: any, res: any) => 
   }
 });
 
+// Refund (for expired ads)
+router.post('/:id/ads/:adId/refund', requireAuth, async (req: any, res: any) => {
+  try {
+    if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
+
+    const { id, adId } = req.params;
+    
+    const { rows } = await query(`SELECT stripe_payment_intent_id, status FROM ads WHERE id = $1 AND publisher_id = $2`, [adId, id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Ad not found' });
+    
+    const ad = rows[0];
+    if (ad.status === 'rejected' || ad.status === 'refunded') {
+      return res.status(400).json({ error: 'Ad is already rejected/refunded' });
+    }
+
+    if (ad.stripe_payment_intent_id) {
+      await stripe.refunds.create({
+        payment_intent: ad.stripe_payment_intent_id,
+        reverse_transfer: true,
+      });
+    }
+
+    await query(`UPDATE ads SET status = 'refunded' WHERE id = $1`, [adId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upload publisher logo
+router.post('/:id/logo', requireAuth, upload.single('logo'), async (req: any, res: any) => {
+  try {
+    const publisherId = req.params.id;
+    if (!canAccessPublisher(req, publisherId)) return res.status(403).json({ error: 'Unauthorized' });
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const logoUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: logoUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Stripe Connect Onboarding
 router.post('/:id/onboard', requireAuth, async (req: any, res: any) => {
   try {
@@ -245,10 +314,12 @@ router.post('/:id/onboard', requireAuth, async (req: any, res: any) => {
       await query('UPDATE publishers SET stripe_account_id = $1 WHERE id = $2', [accountId, publisherId]);
     }
 
+    const origin = req.headers.origin || 'http://localhost:5174';
+
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `http://localhost:5174/dashboard?refresh=true`,
-      return_url: `http://localhost:5174/dashboard?return=true`,
+      refresh_url: `${origin}/dashboard?refresh=true`,
+      return_url: `${origin}/dashboard?return=true`,
       type: 'account_onboarding',
     });
 

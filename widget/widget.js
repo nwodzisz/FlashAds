@@ -1,8 +1,18 @@
+const scriptTags = document.getElementsByTagName('script');
+let currentScriptUrl = '';
+for (let i = 0; i < scriptTags.length; i++) {
+  if (scriptTags[i].src && scriptTags[i].src.includes('widget.js')) {
+    currentScriptUrl = new URL(scriptTags[i].src).origin;
+    break;
+  }
+}
+const BACKEND_URL = currentScriptUrl || 'http://localhost:3001';
+
 class TownTickerWidget {
   constructor(publisherId, container) {
     this.publisherId = publisherId;
     this.container = typeof container === 'string' ? document.getElementById(container) : container;
-    this.apiUrl = 'http://localhost:3001/api/ads';
+    this.apiUrl = `${BACKEND_URL}/api/ads`;
     
     if (!this.container) {
       console.error(`TownTicker: Container not found`);
@@ -17,25 +27,43 @@ class TownTickerWidget {
       const response = await fetch(`${this.apiUrl}?publisher=${this.publisherId}`);
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-      this.render(data.ads, data.config);
+      this.render(data.ads, data.config, data.schema);
     } catch (error) {
       console.error('TownTicker: Error fetching ads', error);
       this.container.innerHTML = '<p>Error loading ads.</p>';
     }
   }
 
-  render(ads, config) {
+  render(ads, config, schema = []) {
     if (!ads || ads.length === 0) {
-      this.container.innerHTML = '<div class="townticker-ads-empty">Advertise Here!</div>';
+      this.container.innerHTML = '';
       return;
     }
     
     // Apply dynamic widget styles
     const styles = config.styles || {};
     
+    // Inject Google Font if needed
+    if (styles.fontFamily && styles.fontFamily !== 'System Default') {
+      const fontUrl = `https://fonts.googleapis.com/css2?family=${styles.fontFamily.replace(/ /g, '+')}:wght@400;600;700&display=swap`;
+      if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = fontUrl;
+        document.head.appendChild(link);
+      }
+    }
+    
+    const parseSize = (val, defaultVal) => {
+      if (!val) return defaultVal;
+      if (/^\d+$/.test(val)) return `${val}px`;
+      return val;
+    };
+    
     const containerStyle = `
-      font-family: ${styles.fontFamily || 'system-ui, sans-serif'};
+      font-family: ${styles.fontFamily ? `'${styles.fontFamily}', sans-serif` : 'system-ui, sans-serif'};
       display: flex;
+      flex-wrap: wrap;
       flex-direction: ${styles.layout === 'horizontal' ? 'row' : 'column'};
       gap: 1rem;
       background: ${styles.backgroundColor || 'transparent'};
@@ -46,6 +74,9 @@ class TownTickerWidget {
 
     const adStyle = `
       flex: 1;
+      min-width: 250px;
+      max-width: ${parseSize(styles.adMaxWidth, '400px')};
+      box-sizing: border-box;
       padding: 1rem;
       background: ${styles.adBackgroundColor || '#ffffff'};
       border: 1px solid ${styles.adBorderColor || '#e5e7eb'};
@@ -57,6 +88,7 @@ class TownTickerWidget {
       flex-direction: column;
       gap: 0.5rem;
       transition: transform 0.2s;
+      position: relative;
     `;
 
     // Try to guess which field is the image, title, and link based on their values
@@ -65,27 +97,33 @@ class TownTickerWidget {
     ads.forEach(ad => {
       const { data } = ad;
       // Heuristics for dynamic data rendering
-      const imageKey = Object.keys(data).find(k => k.includes('image') || data[k]?.toString().startsWith('/uploads/'));
-      const linkKey = Object.keys(data).find(k => k.includes('link') || k.includes('url') || data[k]?.toString().startsWith('http'));
-      
+      const linkField = schema.find(f => f.type === 'url' || f.name.includes('link') || f.name.includes('url'));
+      const linkKey = linkField ? linkField.name : null;
       const link = linkKey ? data[linkKey] : '#';
       
-      html += `<a href="${link}" target="_blank" class="flash-ad-item" style="${adStyle}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">`;
+      const trackClick = `navigator.sendBeacon('${this.apiUrl}/${ad.id}/click')`;
       
-      if (imageKey) {
-        html += `<img src="http://localhost:3001${data[imageKey]}" alt="Ad" style="width: 100%; height: auto; border-radius: 4px;" />`;
+      html += `<a href="${link}" target="_blank" class="flash-ad-item" style="${adStyle}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'" onclick="${trackClick}">`;
+      
+      if (config.showAdPill !== false) {
+        html += `<div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.5); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; z-index: 10;">Ad</div>`;
       }
-      
-      // Render the rest of the text fields
-      Object.keys(data).forEach(key => {
-        if (key === imageKey || key === linkKey) return;
+
+      schema.forEach(field => {
+        const key = field.name;
         const val = data[key];
-        if (typeof val === 'string') {
-           if (val.length < 50) {
-             html += `<h4 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: ${styles.textColor || '#111827'};">${val}</h4>`;
-           } else {
-             html += `<p style="margin: 0; font-size: 0.875rem; color: ${styles.textColor || '#4b5563'};">${val}</p>`;
-           }
+        if (!val) return;
+
+        if (field.type === 'file' || field.type === 'image' || key.includes('image')) {
+          const src = val.startsWith('http') ? val : `${BACKEND_URL}${val}`;
+          html += `<img src="${src}" alt="Ad" style="width: 100%; max-height: ${parseSize(styles.imageMaxHeight, '250px')}; height: auto; object-fit: contain; border-radius: 4px;" />`;
+        } else if (field.type !== 'url' && key !== linkKey) {
+          if (typeof val === 'string') {
+             const isHeadline = key.toLowerCase().includes('title') || key.toLowerCase().includes('headline');
+             const fontSize = field.fontSize || (isHeadline ? '1.125rem' : '0.875rem');
+             
+             html += `<div style="margin: 0; font-size: ${fontSize}; font-weight: ${isHeadline ? '600' : '400'}; color: ${styles.textColor || (isHeadline ? '#111827' : '#4b5563')};">${val}</div>`;
+          }
         }
       });
       
@@ -95,6 +133,11 @@ class TownTickerWidget {
     html += `</div>`;
     
     this.container.innerHTML = html;
+    
+    // Track views
+    ads.forEach(ad => {
+      fetch(`${this.apiUrl}/${ad.id}/view`, { method: 'POST', keepalive: true }).catch(() => {});
+    });
   }
 }
 

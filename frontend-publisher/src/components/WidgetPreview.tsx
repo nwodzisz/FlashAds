@@ -1,11 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function WidgetPreview({ config, dummyAds }: { config: any, dummyAds: any[] }) {
   const styles = config?.widgetConfig?.styles || {};
   
+  const parseSize = (val: string | undefined, defaultVal: string) => {
+    if (!val) return defaultVal;
+    if (/^\d+$/.test(val)) return `${val}px`;
+    return val;
+  };
+
+  useEffect(() => {
+    if (styles.fontFamily && styles.fontFamily !== 'System Default') {
+      const fontUrl = `https://fonts.googleapis.com/css2?family=${styles.fontFamily.replace(/ /g, '+')}:wght@400;600;700&display=swap`;
+      if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = fontUrl;
+        document.head.appendChild(link);
+      }
+    }
+  }, [styles.fontFamily]);
+
   const containerStyle: React.CSSProperties = {
-    fontFamily: styles.fontFamily || 'system-ui, sans-serif',
+    fontFamily: styles.fontFamily ? `'${styles.fontFamily}', sans-serif` : 'system-ui, sans-serif',
     display: 'flex',
+    flexWrap: 'wrap',
     flexDirection: styles.layout === 'horizontal' ? 'row' : 'column',
     gap: '1rem',
     background: styles.backgroundColor || 'transparent',
@@ -17,6 +36,9 @@ export default function WidgetPreview({ config, dummyAds }: { config: any, dummy
 
   const adStyle: React.CSSProperties = {
     flex: 1,
+    minWidth: '250px',
+    maxWidth: parseSize(styles.adMaxWidth, '400px'),
+    boxSizing: 'border-box',
     padding: '1rem',
     background: styles.adBackgroundColor || '#ffffff',
     border: `1px solid ${styles.adBorderColor || '#e5e7eb'}`,
@@ -28,6 +50,7 @@ export default function WidgetPreview({ config, dummyAds }: { config: any, dummy
     flexDirection: 'column',
     gap: '0.5rem',
     transition: 'transform 0.2s',
+    position: 'relative' // Added for the Ad pill positioning
   };
 
   return (
@@ -44,22 +67,32 @@ export default function WidgetPreview({ config, dummyAds }: { config: any, dummy
         <div style={containerStyle}>
           {dummyAds.map((ad, idx) => {
             const data = ad.data;
-            const imageKey = Object.keys(data).find(k => k.includes('image') || data[k]?.toString().startsWith('/uploads/'));
-            const linkKey = Object.keys(data).find(k => k.includes('link') || k.includes('url') || data[k]?.toString().startsWith('http'));
+            const adSchema = config?.adSchema || [];
+            const linkField = adSchema.find((f: any) => f.type === 'url' || f.name.includes('link') || f.name.includes('url'));
+            const linkKey = linkField ? linkField.name : null;
 
             return (
               <div key={idx} style={adStyle}>
-                {imageKey && (
-                  <img src={`http://localhost:3001${data[imageKey]}`} alt="Ad" style={{ width: '100%', height: 'auto', borderRadius: '4px' }} />
+                {config?.widgetConfig?.showAdPill !== false && (
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', zIndex: 10 }}>
+                    Ad
+                  </div>
                 )}
-                {Object.keys(data).map(key => {
-                  if (key === imageKey || key === linkKey) return null;
+                
+                {adSchema.map((field: any) => {
+                  const key = field.name;
                   const val = data[key];
-                  if (typeof val === 'string') {
-                    if (val.length < 50) {
-                      return <h4 key={key} style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: styles.textColor || '#111827' }}>{val}</h4>;
-                    } else {
-                      return <p key={key} style={{ margin: 0, fontSize: '0.875rem', color: styles.textColor || '#4b5563' }}>{val}</p>;
+                  if (!val) return null;
+
+                  if (field.type === 'file' || field.type === 'image' || key.includes('image')) {
+                    const src = val.toString().startsWith('http') ? val : `${val}`;
+                    return <img key={key} src={src} alt="Ad" style={{ width: '100%', maxHeight: parseSize(styles.imageMaxHeight, '250px'), height: 'auto', objectFit: 'contain', borderRadius: '4px' }} />;
+                  } else if (key !== linkKey && field.type !== 'url') {
+                    if (typeof val === 'string') {
+                      const isHeadline = key.toLowerCase().includes('title') || key.toLowerCase().includes('headline');
+                      const fontSize = field.fontSize || (isHeadline ? '1.125rem' : '0.875rem');
+                      
+                      return <div key={key} style={{ margin: 0, fontSize: fontSize, fontWeight: isHeadline ? 600 : 400, color: styles.textColor || (isHeadline ? '#111827' : '#4b5563') }}>{val}</div>;
                     }
                   }
                   return null;

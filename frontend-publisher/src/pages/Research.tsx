@@ -47,7 +47,7 @@ export default function Research() {
           </div>
         </section>
 
-        <section style={{ padding: '2rem 2rem 6rem', position: 'relative', zIndex: 10 }}>
+        <section className="content-section">
           
           <div className="feature-grid" style={{ maxWidth: '1200px', margin: '0 auto', gap: '2rem' }}>
             

@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS ads (
     stripe_payment_intent_id VARCHAR(255),
     stripe_checkout_session_id VARCHAR(255),
     advertiser_email VARCHAR(255),
+    views INT NOT NULL DEFAULT 0,
+    clicks INT NOT NULL DEFAULT 0,
     start_time TIMESTAMP WITH TIME ZONE,
     end_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

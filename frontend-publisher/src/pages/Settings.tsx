@@ -22,7 +22,7 @@ export default function Settings() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch(`http://localhost:3001/api/publishers/${publisherId}/settings`, {
+        const res = await fetch(`/api/publishers/${publisherId}/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -33,7 +33,7 @@ export default function Settings() {
         }
         
         // Fetch team members
-        const teamRes = await fetch(`http://localhost:3001/api/publishers/${publisherId}/users`, {
+        const teamRes = await fetch(`/api/publishers/${publisherId}/users`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -65,7 +65,7 @@ export default function Settings() {
     setMessage({ type: '', text: '' });
 
     try {
-      const res = await fetch(`http://localhost:3001/api/publishers/${publisherId}`, {
+      const res = await fetch(`/api/publishers/${publisherId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export default function Settings() {
     setTeamMessage({ type: '', text: '' });
 
     try {
-      const res = await fetch(`http://localhost:3001/api/publishers/${publisherId}/users`, {
+      const res = await fetch(`/api/publishers/${publisherId}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function Settings() {
   const handleRemoveMember = async (id: string) => {
     if (!window.confirm('Are you sure you want to remove this team member?')) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/publishers/${publisherId}/users/${id}`, {
+      const res = await fetch(`/api/publishers/${publisherId}/users/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -211,7 +211,8 @@ export default function Settings() {
       {/* Team Members */}
       <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 600 }}>Team Members</h2>
       <div className="panel" style={{ marginBottom: '3rem' }}>
-        <table className="ads-table" style={{ marginBottom: '2rem' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="queue-table" style={{ marginBottom: '2rem' }}>
           <thead>
             <tr>
               <th>Email</th>
@@ -237,6 +238,7 @@ export default function Settings() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Invite New Member</h3>
         
@@ -253,8 +255,8 @@ export default function Settings() {
           </div>
         )}
 
-        <form onSubmit={handleInvite} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ flex: 1, margin: 0 }}>
+        <form onSubmit={handleInvite} className="invite-form">
+          <div className="form-group invite-form-group">
             <label>Email</label>
             <input 
               type="email" 
@@ -265,7 +267,7 @@ export default function Settings() {
               className="input-field"
             />
           </div>
-          <div className="form-group" style={{ flex: 1, margin: 0 }}>
+          <div className="form-group invite-form-group">
             <label>Temporary Password</label>
             <input 
               type="password" 
@@ -276,7 +278,7 @@ export default function Settings() {
               className="input-field"
             />
           </div>
-          <button type="submit" className="btn secondary-btn" disabled={inviting}>
+          <button type="submit" className="btn secondary-btn invite-btn" disabled={inviting}>
             {inviting ? 'Inviting...' : 'Invite'}
           </button>
         </form>

@@ -28,14 +28,14 @@ export default function About() {
           </div>
         </section>
 
-        <section style={{ padding: '2rem 2rem 6rem', position: 'relative', zIndex: 10 }}>
+        <section className="content-section">
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
               {/* The Problem */}
-              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                <div style={{ backgroundColor: '#fee2e2', padding: '1rem', borderRadius: '16px', color: '#dc2626', flexShrink: 0 }}>
+              <div className="glass-panel about-card">
+                <div className="about-icon" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 </div>
                 <div>
@@ -48,8 +48,8 @@ export default function About() {
               </div>
 
               {/* The Solution */}
-              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                <div style={{ backgroundColor: '#dcfce7', padding: '1rem', borderRadius: '16px', color: '#16a34a', flexShrink: 0 }}>
+              <div className="glass-panel about-card">
+                <div className="about-icon" style={{ backgroundColor: '#dcfce7', color: '#16a34a' }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                 </div>
                 <div>
@@ -61,8 +61,8 @@ export default function About() {
               </div>
 
               {/* The Impact */}
-              <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px', display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                <div style={{ backgroundColor: '#dbeafe', padding: '1rem', borderRadius: '16px', color: '#2563eb', flexShrink: 0 }}>
+              <div className="glass-panel about-card">
+                <div className="about-icon" style={{ backgroundColor: '#dbeafe', color: '#2563eb' }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path></svg>
                 </div>
                 <div>

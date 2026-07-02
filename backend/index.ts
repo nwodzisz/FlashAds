@@ -15,6 +15,7 @@ import webhooksRouter from './routes/webhooks';
 import path from 'path';
 
 import publishersRouter from './routes/publishers';
+import { startCronJobs } from './cron';
 
 // Note: webhook routes must parse raw body.
 // So we use standard express.json() for everything EXCEPT the stripe webhook.
@@ -39,4 +40,5 @@ app.get('/health', (req, res) => {
 
 app.listen(port, () => {
   console.log(`TownTicker Backend running on port ${port}`);
+  startCronJobs();
 });

@@ -17,6 +17,47 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Playful Logo Animations */
+@keyframes logo-jump {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+@keyframes logo-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px) rotate(-4deg); }
+  75% { transform: translateX(4px) rotate(4deg); }
+}
+@keyframes logo-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes logo-roll {
+  0% { transform: translateX(0) rotate(0deg); }
+  50% { transform: translateX(30px) rotate(180deg); }
+  100% { transform: translateX(0) rotate(360deg); }
+}
+@keyframes logo-fall {
+  0% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(110deg) translateY(20px); }
+  100% { transform: rotate(90deg) translateY(10px); }
+}
+
+.logo-anim-jump { animation: logo-jump 0.4s infinite; }
+.logo-anim-shake { animation: logo-shake 0.15s infinite; }
+.logo-anim-rotate { animation: logo-rotate 1.5s linear infinite; }
+.logo-anim-roll { animation: logo-roll 1.5s infinite; }
+.logo-anim-fall { animation: logo-fall 0.6s forwards; transform-origin: bottom right; }
+
 body {
   margin: 0;
   padding: 0;
@@ -57,6 +98,7 @@ body {
   flex: 1;
   display: flex;
   justify-content: center;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
 .ad-form {
@@ -122,6 +164,7 @@ textarea, input {
   font-size: 1rem;
   background-color: var(--bg-color);
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 textarea:focus, input:focus {
   outline: none;
@@ -148,9 +191,14 @@ textarea:focus, input:focus {
   border-radius: 8px;
   padding: 1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   text-align: center;
   position: relative;
+}
+.tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-color: var(--primary-pop);
 }
 .tier-card input[type="radio"] {
   position: absolute;
