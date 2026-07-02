@@ -243,7 +243,7 @@ export default function Dashboard() {
             value={`<div id="townticker-widget" data-publisher="${publisherId}"></div>\n<script src="${window.location.origin}/widget/widget.js"></script>`}
           />
           <button
-            className="btn secondary-btn small-btn"
+            className="btn secondary-btn small-btn pulse-highlight"
             style={{ position: 'absolute', top: '10px', right: '10px' }}
             onClick={() => {
               navigator.clipboard.writeText(`<div id="townticker-widget" data-publisher="${publisherId}"></div>\n<script src="${window.location.origin}/widget/widget.js"></script>`);
@@ -253,12 +253,22 @@ export default function Dashboard() {
             Copy
           </button>
         </div>
-        <p style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
-          <strong>Advertiser Portal Link:</strong> Share this link with businesses so they can buy ads from you: <br />
-          <a href={`${import.meta.env.VITE_ADVERTISER_URL || 'http://towntickerclient.nathanwodzisz.com'}/?publisher=${publisherId}`} target="_blank" className="text-btn" style={{ wordBreak: 'break-all' }}>
-            {`${import.meta.env.VITE_ADVERTISER_URL || 'http://towntickerclient.nathanwodzisz.com'}/?publisher=${publisherId}`}
-          </a>
-        </p>
+
+        <div style={{ position: 'relative', marginTop: '1.5rem' }}>
+          <svg
+            className="arrow-bounce-down"
+            style={{ position: 'absolute', left: '160px', top: '-35px', pointerEvents: 'none', zIndex: 10, filter: 'drop-shadow(0px 8px 12px rgba(255, 87, 34, 0.5))' }}
+            width="45" height="45" viewBox="0 0 24 24" fill="url(#gradient-arrow)"
+          >
+            <path d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V14.1716L6.41421 9.58579C6.02369 9.19526 5.39052 9.19526 5 9.58579C4.60948 9.97631 4.60948 10.6095 5 11L11.2929 17.2929C11.6834 17.6834 12.3166 17.6834 12.7071 17.2929L19 11C19.3905 10.6095 19.3905 9.97631 19 9.58579C18.6095 9.19526 17.9763 9.19526 17.5858 9.58579L13 14.1716V3Z" />
+          </svg>
+          <p style={{ margin: 0, fontSize: '0.875rem' }}>
+            <strong>Advertiser Portal Link:</strong> Share this link with businesses so they can buy ads from you: <br />
+            <a href={`${import.meta.env.VITE_ADVERTISER_URL || 'http://towntickerclient.nathanwodzisz.com'}/?publisher=${publisherId}`} target="_blank" className="text-btn pulse-highlight" style={{ wordBreak: 'break-all', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
+              {`${import.meta.env.VITE_ADVERTISER_URL || 'http://towntickerclient.nathanwodzisz.com'}/?publisher=${publisherId}`}
+            </a>
+          </p>
+        </div>
 
         <div style={{ marginTop: '2rem', maxWidth: '900px', margin: '2rem auto 0' }}>
           <WidgetPreview
@@ -341,7 +351,7 @@ export default function Dashboard() {
                             const valStr = String(val);
                             const isImage = valStr.startsWith('/uploads/') || /\.(jpeg|jpg|gif|png|webp)$/i.test(valStr);
                             const isUrl = valStr.startsWith('http://') || valStr.startsWith('https://');
-                            
+
                             return (
                               <div key={key} style={{ fontSize: '0.875rem' }}>
                                 <strong>{key.replace(/_/g, ' ')}: </strong>
@@ -471,10 +481,10 @@ export default function Dashboard() {
         </div>
         <div className="form-group row" style={{ marginTop: '1rem' }}>
           <div className="col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <input 
-              type="checkbox" 
-              checked={config.formConfig?.allowFutureScheduling || false} 
-              onChange={e => handleConfigChange('formConfig', { ...config.formConfig, allowFutureScheduling: e.target.checked })} 
+            <input
+              type="checkbox"
+              checked={config.formConfig?.allowFutureScheduling || false}
+              onChange={e => handleConfigChange('formConfig', { ...config.formConfig, allowFutureScheduling: e.target.checked })}
               id="allowFutureScheduling"
             />
             <label htmlFor="allowFutureScheduling" style={{ margin: 0 }}>Allow Advertisers to Schedule Ads in the Future</label>

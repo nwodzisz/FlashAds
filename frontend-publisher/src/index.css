@@ -1303,3 +1303,46 @@ input[type="color"]::-moz-color-swatch {
   }
 }
 
+
+@keyframes bounceDiagonal {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-10px, -10px);
+  }
+}
+
+@keyframes bounceDown {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.arrow-bounce-diagonal {
+  animation: bounceDiagonal 1.5s infinite ease-in-out;
+}
+
+.arrow-bounce-down {
+  animation: bounceDown 1.5s infinite ease-in-out;
+}
+
+@keyframes heartbeatPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(249, 115, 22, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+  }
+}
+
+.pulse-highlight {
+  animation: heartbeatPulse 2s infinite ease-out;
+}
+
