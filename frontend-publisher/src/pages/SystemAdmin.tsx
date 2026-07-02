@@ -112,27 +112,29 @@ export default function SystemAdmin() {
 
       <div className="panel mt-4" style={{ marginTop: '2rem' }}>
         <h3>Publishers</h3>
-        <table className="admin-table">
-          <thead>
-            <tr><th>Name</th><th>Domain</th><th>Views</th><th>Clicks</th><th>Revenue</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {publishers.map(pub => (
-              <tr key={pub.id}>
-                <td>{pub.name}</td>
-                <td>{pub.domain}</td>
-                <td>{parseInt(pub.total_views || 0).toLocaleString()}</td>
-                <td>{parseInt(pub.total_clicks || 0).toLocaleString()}</td>
-                <td>${((parseInt(pub.total_revenue_cents || 0)) / 100).toFixed(2)}</td>
-                <td>
-                  {pub.role !== 'admin' && (
-                    <button onClick={() => handleDelete(pub.id)} className="btn danger-btn">Delete</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Domain</th><th>Views</th><th>Clicks</th><th>Revenue</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {publishers.map(pub => (
+                <tr key={pub.id}>
+                  <td>{pub.name}</td>
+                  <td>{pub.domain}</td>
+                  <td>{parseInt(pub.total_views || 0).toLocaleString()}</td>
+                  <td>{parseInt(pub.total_clicks || 0).toLocaleString()}</td>
+                  <td>${((parseInt(pub.total_revenue_cents || 0)) / 100).toFixed(2)}</td>
+                  <td>
+                    {pub.role !== 'admin' && (
+                      <button onClick={() => handleDelete(pub.id)} className="btn danger-btn">Delete</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

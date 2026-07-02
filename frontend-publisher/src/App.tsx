@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Settings from './pages/Settings';
 import About from './pages/About';
 import Research from './pages/Research';
+import FAQ from './pages/FAQ';
 import PlayfulLogo from './components/PlayfulLogo';
 import './index.css';
 
@@ -71,6 +72,7 @@ function AppContent() {
               {role === 'admin' && <a href="/system" className="btn text-btn">System Admin</a>}
               <a href="/dashboard" className="btn text-btn">My Dashboard</a>
               <a href="/settings" className="btn text-btn">Settings</a>
+              <a href="/faq" className="btn text-btn">FAQ</a>
               <button onClick={handleLogout} className="btn secondary-btn">Logout</button>
             </div>
           )}
@@ -86,6 +88,7 @@ function AppContent() {
           <Route path="/system" element={<PrivateRoute adminOnly={true}><SystemAdmin /></PrivateRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+          <Route path="/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
         </Routes>
       </main>
     </div>
