@@ -4,6 +4,7 @@ import axios from 'axios';
 import LoadingScreen from '../components/LoadingScreen';
 import ConfigBuilder from '../components/ConfigBuilder';
 import WidgetPreview from '../components/WidgetPreview';
+import TutorialOverlay from '../components/TutorialOverlay';
 
 export default function Dashboard() {
   const publisherId = localStorage.getItem('publisher_id');
@@ -11,15 +12,27 @@ export default function Dashboard() {
   const headers = { Authorization: `Bearer ${token}` };
 
   const [ads, setAds] = useState<any[]>([]);
+  const [advertisers, setAdvertisers] = useState<any[]>([]);
+  const [advertiserSearch, setAdvertiserSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   const [config, setConfig] = useState<any>({});
+  const [userSettings, setUserSettings] = useState<any>({});
   const [hasStripe, setHasStripe] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchPublisherInfo();
-    fetchAds();
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchPublisherInfo(),
+        fetchUserInfo(),
+        fetchAds(),
+        fetchAdvertisers()
+      ]);
+      setLoading(false);
+    };
+    init();
   }, [publisherId]);
 
   const fetchPublisherInfo = async () => {
@@ -32,14 +45,40 @@ export default function Dashboard() {
     }
   };
 
+  const fetchUserInfo = async () => {
+    try {
+      const res = await axios.get('/api/auth/me', { headers });
+      setUserSettings(res.data.settings || {});
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchAds = async () => {
     try {
       const res = await axios.get(`/api/publishers/${publisherId}/ads`, { headers });
       setAds(res.data);
     } catch (err) {
       console.error('Failed to fetch ads', err);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchAdvertisers = async () => {
+    try {
+      const res = await axios.get(`/api/publishers/${publisherId}/advertisers`, { headers });
+      setAdvertisers(res.data);
+    } catch (err) {
+      console.error('Failed to fetch advertisers', err);
+    }
+  };
+
+  const handleToggleAdvertiserBlock = async (email: string, currentStatus: boolean) => {
+    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this advertiser?`)) return;
+    try {
+      await axios.post(`/api/publishers/${publisherId}/advertisers/toggle-block`, { email, is_blocked: !currentStatus }, { headers });
+      fetchAdvertisers();
+    } catch (err) {
+      alert('Failed to toggle block status');
     }
   };
 
@@ -121,6 +160,16 @@ export default function Dashboard() {
     setConfig({ ...config, [key]: value });
   };
 
+  const completeTutorial = async () => {
+    const newSettings = { ...userSettings, tutorial_completed: true };
+    setUserSettings(newSettings);
+    try {
+      await axios.put(`/api/auth/me/settings`, { settings: { tutorial_completed: true } }, { headers });
+    } catch (err) {
+      console.error('Failed to save tutorial completion', err);
+    }
+  };
+
   const saveConfig = async () => {
     setSaving(true);
     try {
@@ -164,7 +213,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-layout">
-      <div className="panel actions-panel">
+      <div className="panel actions-panel" id="tour-stripe">
         <h2>Stripe Connect</h2>
         {hasStripe ? (
           <p className="success-text">Stripe account connected!</p>
@@ -223,7 +272,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="panel embed-panel">
+      <div className="panel embed-panel" id="tour-widget">
         <h2>Embed Your Widget</h2>
         <p>Copy and paste this code anywhere on your website to display your active ads.</p>
         <div style={{ position: 'relative' }}>
@@ -401,7 +450,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="panel config-panel">
+      <div className="panel config-panel" id="tour-tiers">
         <div className="flex-header">
           <h2 style={{ margin: 0 }}>Ad Pricing Tiers</h2>
           <button className="btn secondary-btn small-btn" onClick={addTier}>+ Add Tier</button>
@@ -434,7 +483,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="panel config-panel" style={{ marginBottom: '2rem' }}>
+      <div className="panel config-panel" style={{ marginBottom: '2rem' }} id="tour-form">
         <h2 style={{ margin: 0, marginBottom: '1rem' }}>Advertiser Form Basics</h2>
         <div className="form-group row">
           <div className="col">
@@ -505,12 +554,73 @@ export default function Dashboard() {
         </div>
       </details>
 
+      <div className="panel" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2>Manage Advertisers</h2>
+          <input 
+            type="text" 
+            placeholder="Search by email..." 
+            value={advertiserSearch} 
+            onChange={e => setAdvertiserSearch(e.target.value)}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', minWidth: '250px' }}
+          />
+        </div>
+        <p style={{ marginBottom: '1rem', color: '#64748b' }}>Advertisers who have submitted ads to your site.</p>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {advertisers.filter(a => a.email.toLowerCase().includes(advertiserSearch.toLowerCase())).map(adv => (
+                <tr key={adv.email}>
+                  <td>{adv.email}</td>
+                  <td>
+                    {adv.is_blocked ? (
+                      <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Blocked</span>
+                    ) : (
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>Active</span>
+                    )}
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => handleToggleAdvertiserBlock(adv.email, adv.is_blocked)} 
+                      className={`btn ${adv.is_blocked ? 'secondary-btn' : 'danger-btn'}`}
+                      style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}
+                    >
+                      {adv.is_blocked ? 'Unblock' : 'Block'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {advertisers.filter(a => a.email.toLowerCase().includes(advertiserSearch.toLowerCase())).length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ textAlign: 'center', padding: '1rem', color: '#64748b' }}>
+                    No advertisers found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', marginBottom: '2rem' }}>
         <button onClick={saveConfig} className="btn primary-btn" disabled={saving}>
           {saving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
 
+      {!loading && userSettings && userSettings.tutorial_completed !== true && (
+        <TutorialOverlay 
+          onComplete={completeTutorial} 
+          config={config} 
+        />
+      )}
     </div>
   );
 }

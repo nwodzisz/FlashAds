@@ -75,7 +75,7 @@ export default function SubmissionForm() {
   return (
     <div className="submission-layout">
       <div className="form-section panel">
-        <h2>Create Your TownTickerAd</h2>
+        <h2>Create Your Ad</h2>
         <form onSubmit={handleSubmit} className="ad-form">
           <div className="form-group">
             <label>Headline (Max 50 chars)</label>

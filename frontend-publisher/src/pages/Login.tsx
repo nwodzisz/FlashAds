@@ -27,6 +27,11 @@ export default function Login() {
       }
       localStorage.setItem('role', res.data.role);
       localStorage.setItem('config', JSON.stringify(res.data.config));
+      if (res.data.settings) {
+        localStorage.setItem('settings', JSON.stringify(res.data.settings));
+      } else {
+        localStorage.setItem('settings', '{}');
+      }
       
       window.location.href = res.data.role === 'admin' ? '/system' : '/dashboard';
     } catch (err: any) {
@@ -49,6 +54,9 @@ export default function Login() {
         </div>
         <button type="submit" className="btn primary-btn">Login</button>
         <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem' }}>
+          <Link to="/forgot-password" style={{ color: '#0f172a', textDecoration: 'none' }}>Forgot your password?</Link>
+        </p>
+        <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem' }}>
           Don't have an account? <Link to="/signup" className="text-btn" style={{ padding: 0 }}>Sign Up</Link>
         </p>
       </form>

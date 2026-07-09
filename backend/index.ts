@@ -12,6 +12,8 @@ app.use(cors());
 import authRouter from './routes/auth';
 import adsRouter from './routes/ads';
 import webhooksRouter from './routes/webhooks';
+import advertiserAuthRouter from './routes/advertiserAuth';
+import passwordResetRouter from './routes/passwordReset';
 import path from 'path';
 
 import publishersRouter from './routes/publishers';
@@ -28,6 +30,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/auth', passwordResetRouter);
+app.use('/api/advertisers', advertiserAuthRouter);
 app.use('/api/ads', adsRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/publishers', publishersRouter);

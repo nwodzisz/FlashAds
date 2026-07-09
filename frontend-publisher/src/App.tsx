@@ -10,6 +10,8 @@ import About from './pages/About';
 import Research from './pages/Research';
 import FAQ from './pages/FAQ';
 import PlayfulLogo from './components/PlayfulLogo';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import './index.css';
 
 function PrivateRoute({ children, adminOnly = false }: { children: any, adminOnly?: boolean }) {
@@ -85,6 +87,8 @@ function AppContent() {
           <Route path="/research" element={<Research />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/system" element={<PrivateRoute adminOnly={true}><SystemAdmin /></PrivateRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />

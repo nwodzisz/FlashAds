@@ -5,6 +5,7 @@ import { requireAuth, requireAdmin } from './auth';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
+import { logEvent } from '../logger';
 
 // Set up storage for logo uploads
 const storage = multer.diskStorage({
@@ -61,6 +62,20 @@ router.get('/', requireAuth, requireAdmin, async (req: any, res: any) => {
   }
 });
 
+// Admin: Get system logs
+router.get('/admin/logs', requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { rows } = await query(`
+      SELECT * FROM system_logs 
+      ORDER BY created_at DESC 
+      LIMIT 500
+    `);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Admin: Create publisher (stubbed for brevity, could just use register flow)
 router.post('/', requireAuth, requireAdmin, async (req: any, res: any) => {
   res.status(501).json({ error: 'Not implemented' });
@@ -70,9 +85,23 @@ router.post('/', requireAuth, requireAdmin, async (req: any, res: any) => {
 router.delete('/:id', requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     await query(`DELETE FROM publishers WHERE id = $1`, [req.params.id]);
+    await logEvent('PUBLISHER_DELETED', 'publisher', req.params.id, { deleted_by: req.user.id });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete publisher' });
+  }
+});
+
+// Admin: Reset tutorial for publisher
+router.post('/admin/publishers/:id/reset-tutorial', requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    await query(`UPDATE users SET settings = settings - 'tutorial_completed' WHERE publisher_id = $1`, [req.params.id]);
+    await logEvent('PUBLISHER_TUTORIAL_RESET', 'publisher', req.params.id, { reset_by: req.user.id });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to reset tutorial' });
   }
 });
 
@@ -132,6 +161,8 @@ router.put('/:id', requireAuth, async (req: any, res: any) => {
       );
     }
     
+    await logEvent('PUBLISHER_ACCOUNT_UPDATED', 'publisher', req.params.id, { name, domain, email });
+    
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -167,6 +198,8 @@ router.post('/:id/users', requireAuth, async (req: any, res: any) => {
       [req.params.id, email, password_hash]
     );
     
+    await logEvent('PUBLISHER_TEAM_MEMBER_ADDED', 'publisher', req.params.id, { new_user_email: email, added_by: req.user.id });
+
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add team member' });
@@ -181,6 +214,9 @@ router.delete('/:id/users/:userId', requireAuth, async (req: any, res: any) => {
     if (req.user.id === req.params.userId) return res.status(400).json({ error: 'Cannot remove yourself' });
     
     await query(`DELETE FROM users WHERE id = $1 AND publisher_id = $2`, [req.params.userId, req.params.id]);
+    
+    await logEvent('PUBLISHER_TEAM_MEMBER_REMOVED', 'publisher', req.params.id, { removed_user_id: req.params.userId, removed_by: req.user.id });
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to remove team member' });
@@ -194,6 +230,9 @@ router.put('/:id/config', requireAuth, async (req: any, res: any) => {
     if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
     const { config } = req.body;
     await query(`UPDATE publishers SET config = $1 WHERE id = $2`, [JSON.stringify(config), req.params.id]);
+    
+    await logEvent('PUBLISHER_CONFIG_UPDATED', 'publisher', req.params.id, { updated_by: req.user.id });
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update config' });
@@ -241,6 +280,9 @@ router.post('/:id/ads/:adId/reject', requireAuth, async (req: any, res: any) => 
     }
 
     await query(`UPDATE ads SET status = 'rejected' WHERE id = $1`, [adId]);
+    
+    await logEvent('AD_REJECTED_AND_REFUNDED', 'ad', adId, { publisher_id: id, rejected_by: req.user.id });
+
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -271,6 +313,9 @@ router.post('/:id/ads/:adId/refund', requireAuth, async (req: any, res: any) => 
     }
 
     await query(`UPDATE ads SET status = 'refunded' WHERE id = $1`, [adId]);
+    
+    await logEvent('AD_REFUNDED', 'ad', adId, { publisher_id: id, refunded_by: req.user.id });
+
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -327,6 +372,93 @@ router.post('/:id/onboard', requireAuth, async (req: any, res: any) => {
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// ----------------------------------------
+// Admin: Get all advertisers
+// ----------------------------------------
+router.get('/admin/advertisers', requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { rows } = await query(`
+      SELECT a.id, a.email, a.is_blocked, a.created_at,
+             COALESCE(string_agg(p.name, ', '), '') as publications
+      FROM advertisers a
+      LEFT JOIN publisher_advertisers pa ON a.id = pa.advertiser_id
+      LEFT JOIN publishers p ON pa.publisher_id = p.id
+      GROUP BY a.id, a.email, a.is_blocked, a.created_at
+      ORDER BY a.created_at DESC
+    `);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch advertisers' });
+  }
+});
+
+// ----------------------------------------
+// Admin: Toggle block status of advertiser globally
+// ----------------------------------------
+router.post('/admin/advertisers/:id/toggle-block', requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { is_blocked } = req.body;
+    await query(`UPDATE advertisers SET is_blocked = $1 WHERE id = $2`, [is_blocked, req.params.id]);
+    
+    await logEvent(is_blocked ? 'ADVERTISER_BLOCKED_GLOBALLY' : 'ADVERTISER_UNBLOCKED_GLOBALLY', 'advertiser', req.params.id, { toggled_by: req.user.id });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle block status' });
+  }
+});
+
+// ----------------------------------------
+// Publisher: Get all advertisers who submitted ads to them
+// ----------------------------------------
+router.get('/:id/advertisers', requireAuth, async (req: any, res: any) => {
+  try {
+    if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
+
+    // Find distinct emails that have submitted to this publisher
+    const { rows } = await query(`
+      SELECT DISTINCT a.advertiser_email as email,
+             EXISTS(SELECT 1 FROM publisher_blocked_emails pbe WHERE pbe.publisher_id = $1 AND pbe.email = a.advertiser_email) as is_blocked
+      FROM ads a
+      WHERE a.publisher_id = $1 AND a.advertiser_email IS NOT NULL
+    `, [req.params.id]);
+    
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch advertisers' });
+  }
+});
+
+// ----------------------------------------
+// Publisher: Toggle block status of advertiser locally
+// ----------------------------------------
+router.post('/:id/advertisers/toggle-block', requireAuth, async (req: any, res: any) => {
+  try {
+    if (!canAccessPublisher(req, req.params.id)) return res.status(403).json({ error: 'Forbidden' });
+    
+    const { email, is_blocked } = req.body;
+    if (is_blocked) {
+      await query(`
+        INSERT INTO publisher_blocked_emails (publisher_id, email) 
+        VALUES ($1, $2) ON CONFLICT DO NOTHING
+      `, [req.params.id, email]);
+    } else {
+      await query(`
+        DELETE FROM publisher_blocked_emails 
+        WHERE publisher_id = $1 AND email = $2
+      `, [req.params.id, email]);
+    }
+    
+    await logEvent(is_blocked ? 'ADVERTISER_BLOCKED_LOCALLY' : 'ADVERTISER_UNBLOCKED_LOCALLY', 'publisher', req.params.id, { advertiser_email: email, toggled_by: req.user.id });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to toggle block status' });
   }
 });
 

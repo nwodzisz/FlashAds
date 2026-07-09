@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from '../db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { logEvent } from '../logger';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { rows: users } = await query('SELECT id, publisher_id, password_hash, role FROM users WHERE email = $1', [email]);
+    const { rows: users } = await query('SELECT id, publisher_id, password_hash, role, settings FROM users WHERE email = $1', [email]);
     if (users.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -44,7 +45,9 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    res.json({ token, id: user.id, publisher_id: user.publisher_id, role: user.role, config });
+    await logEvent('USER_LOGIN', 'user', user.id, { role: user.role, email });
+
+    res.json({ token, id: user.id, publisher_id: user.publisher_id, role: user.role, settings: user.settings, config });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -119,6 +122,8 @@ router.post('/register', async (req, res) => {
       { expiresIn: '1d' }
     );
 
+    await logEvent('PUBLISHER_REGISTERED', 'publisher', publisher.id, { name, domain, email });
+
     res.json({ token, id: user.id, publisher_id: publisher.id, role: user.role, config: publisher.config });
   } catch (error) {
     console.error(error);
@@ -146,10 +151,36 @@ router.post('/admin/invite', requireAuth, requireAdmin, async (req: any, res: an
       VALUES ($1, $2, 'admin', null)
     `, [email, password_hash]);
 
+    await logEvent('ADMIN_INVITED', 'user', null, { email, invited_by: req.user.id });
+
     res.json({ success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get current user info
+router.get('/me', requireAuth, async (req: any, res: any) => {
+  try {
+    const { rows: users } = await query('SELECT id, email, role, publisher_id, settings FROM users WHERE id = $1', [req.user.id]);
+    if (users.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(users[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
+// Update user settings
+router.put('/me/settings', requireAuth, async (req: any, res: any) => {
+  try {
+    const { settings } = req.body;
+    await query(`UPDATE users SET settings = settings || $1::jsonb WHERE id = $2`, [JSON.stringify(settings), req.user.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

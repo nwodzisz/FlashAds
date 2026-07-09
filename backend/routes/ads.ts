@@ -4,6 +4,7 @@ import { stripe } from '../stripe';
 import { calculatePlatformFee } from '../utils';
 import multer from 'multer';
 import path from 'path';
+import { logEvent } from '../logger';
 
 const router = Router();
 
@@ -55,10 +56,25 @@ router.get('/', async (req, res) => {
 // We accept any file uploads, and we will map them into the dynamic data payload
 router.post('/checkout', upload.any(), async (req, res) => {
   try {
-    const { publisher_id, tier, advertiser_email, start_time, ...dynamicData } = req.body;
+    const { publisher_id, tier, advertiser_email, start_time, advertiser_id, ...dynamicData } = req.body;
     
     if (!advertiser_email) {
       return res.status(400).json({ error: 'Advertiser email is required' });
+    }
+
+    // Check if globally blocked
+    const advResult = await query('SELECT is_blocked FROM advertisers WHERE email = $1', [advertiser_email]);
+    if ((advResult.rowCount || 0) > 0 && advResult.rows[0].is_blocked) {
+      return res.status(403).json({ error: 'Your account has been suspended from submitting ads.' });
+    }
+
+    // Check if locally blocked by publisher
+    const localBlockResult = await query(
+      'SELECT 1 FROM publisher_blocked_emails WHERE publisher_id = $1 AND email = $2',
+      [publisher_id, advertiser_email]
+    );
+    if ((localBlockResult.rowCount || 0) > 0) {
+      return res.status(403).json({ error: 'You have been blocked from submitting ads to this publisher.' });
     }
 
     // Fetch publisher config
@@ -122,22 +138,28 @@ router.post('/checkout', upload.any(), async (req, res) => {
 
     if (price_cents === 0) {
       // Free ad: bypass Stripe and instantly activate
-      await query(`
-        INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time, advertiser_email)
-        VALUES ($1, $2, $3, $4, $5, 'active', COALESCE($7::timestamp, NOW()), COALESCE($7::timestamp, NOW()) + interval '1 hour' * ($4::integer), $6)
-      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null]);
+      const { rows } = await query(`
+        INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, status, start_time, end_time, advertiser_email, advertiser_id)
+        VALUES ($1, $2, $3, $4, $5, 'active', COALESCE($7::timestamp, NOW()), COALESCE($7::timestamp, NOW()) + interval '1 hour' * ($4::integer), $6, $8)
+        RETURNING id
+      `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null, advertiser_id || null]);
+      
+      await logEvent('AD_CREATED_FREE', 'ad', rows[0].id, { publisher_id, tier: selectedTier.name, advertiser_email });
+
       const origin = req.headers.origin || 'http://localhost:5173';
       return res.json({ url: `${origin}/success` });
     }
 
     // Insert pending ad for paid tiers
     const adResult = await query(`
-      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, advertiser_email, start_time)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO ads (publisher_id, data, tier, duration_hours, price_cents, advertiser_email, start_time, advertiser_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id;
-    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null]);
+    `, [publisher_id, JSON.stringify(dynamicData), selectedTier.name, duration_hours, price_cents, advertiser_email, start_time || null, advertiser_id || null]);
     
     const adId = adResult.rows[0].id;
+
+    await logEvent('AD_CREATED_PENDING', 'ad', adId, { publisher_id, tier: selectedTier.name, advertiser_email });
 
     // We'll use the first text field in the schema for the product name, or fallback to 'Self-Serve Ad'
     const titleField = adSchema.find((f: any) => f.type === 'text' || f.type === 'short-text' || f.type === 'long-text');
@@ -172,7 +194,14 @@ router.post('/checkout', upload.any(), async (req, res) => {
     // Update ad with session id
     await query('UPDATE ads SET stripe_checkout_session_id = $1 WHERE id = $2', [session.id, adId]);
 
-    res.json({ url: session.url });
+    if (advertiser_id) {
+      await query(
+        'INSERT INTO publisher_advertisers (publisher_id, advertiser_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [publisher_id, advertiser_id]
+      );
+    }
+
+    res.json({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
