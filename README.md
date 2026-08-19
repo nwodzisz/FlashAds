@@ -187,7 +187,7 @@ The Advertiser Portal will run at: `http://localhost:5174` (or the port shown by
 
 ---
 
-## ⚙️ Configuration & Environment Variables
+## Configuration & Environment Variables
 
 ### Backend (`backend/.env`)
 
@@ -208,7 +208,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
 
 ---
 
-## 🗄️ Database Management & Seeding
+## Database Management & Seeding
 
 | Command | Description |
 |---|---|
@@ -219,7 +219,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
 
 ---
 
-## 🔌 Widget Integration Guide
+## Widget Integration Guide
 
 Publishers can embed the TownTicker ad widget on any website with two simple snippets:
 
@@ -237,7 +237,7 @@ Publishers can embed the TownTicker ad widget on any website with two simple sni
 
 ---
 
-## 📡 API Overview
+## API Overview
 
 ### Public & Widget Endpoints
 - `GET /health` - Service health check
@@ -263,6 +263,6 @@ Publishers can embed the TownTicker ad widget on any website with two simple sni
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the ISC License.
