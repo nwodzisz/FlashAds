@@ -6,29 +6,6 @@ TownTicker (FlashAds) is an end-to-end, automated ad network platform designed t
 
 ---
 
-## Table of Contents
-
-- [Architecture & Monorepo Structure](#-architecture--monorepo-structure)
-- [Key Features](#-key-features)
-  - [Publisher Platform](#-publisher-platform)
-  - [Self-Serve Advertiser Portal](#️-self-serve-advertiser-portal)
-  - [Embeddable Widget](#-embeddable-widget)
-  - [Super Admin & Audit Suite](#-super-admin--audit-suite)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [1. Database Setup (Docker)](#1-database-setup-docker)
-  - [2. Backend Setup](#2-backend-setup)
-  - [3. Publisher Portal Setup](#3-publisher-portal-setup)
-  - [4. Advertiser Portal Setup](#4-advertiser-portal-setup)
-- [Configuration & Environment Variables](#-configuration--environment-variables)
-- [Database Management & Seeding](#-database-management--seeding)
-- [Widget Integration Guide](#-widget-integration-guide)
-- [API Overview](#-api-overview)
-- [License](#-license)
-
----
-
 ## Architecture & Monorepo Structure
 
 The repository is organized into four main sub-projects:
